@@ -3,7 +3,7 @@ using final_para.Interfaces;
 
 namespace final_para.Metodos;
 
-public enum TipoElemento { Triangular, Cuadrilateral, Tetrahedral }
+public enum TipoElemento { Triangular, Cuadrilateral }
 
 public class FEM : MetodoNumerico, IResolver<double[]>
 {

@@ -1,5 +1,31 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+# Modo estricto:
+# mantener versionado solo la solucion (.sln), el proyecto C# y README.md.
+*
+
+# Archivos/carpetas que SI se versionan
+!.gitignore
+!README.md
+!final_para.sln
+!final_para/
+!final_para/**
+final_para/bin/
+final_para/obj/
+
+# Rutas tipicas generadas por ai-harness-setup (se mantienen ignoradas)
+.agents/
+apm.yml
+apm.lock.yaml
+apm_modules/
+docs/
+openspec/
+specify/
+specs/
+.github/
+.claude/
+.cursor/
+.windsurf/
+.opencode/
+opencode.jsonc
+CLAUDE.md
+AGENTS.md
+CONTRIBUTING.md
