@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using final_para.Interfaces;
 using final_para.Ecuaciones;
@@ -6,11 +7,42 @@ namespace final_para.Servicios;
 
 public class ServicioParser : IParse
 {
-    public ServicioParser() { }
+    private readonly Dictionary<string, string> _regexFunc;
+    private readonly Dictionary<string, string> _regexLatex;
+
+    public ServicioParser()
+    {
+        _regexFunc = CargarJson("Config/regexFunc.json");
+        _regexLatex = CargarJson("Config/regexLatex.json");
+    }
+
+    public ServicioParser(
+        Dictionary<string, string> regexFunc,
+        Dictionary<string, string> regexLatex)
+    {
+        _regexFunc = regexFunc;
+        _regexLatex = regexLatex;
+    }
+
+    private static Dictionary<string, string> CargarJson(string ruta)
+    {
+        try
+        {
+            var rutaCompleta = Path.Combine(AppContext.BaseDirectory, ruta);
+            var json = File.ReadAllText(rutaCompleta);
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? [];
+        }
+        catch (Exception ex)
+        {
+            // Si falla cargar, retorna diccionario vacío
+            System.Diagnostics.Debug.WriteLine($"Advertencia al cargar {ruta}: {ex.Message}");
+            return [];
+        }
+    }
 
     public string ParseLatex(string expresion)
     {
-        var resultado = expresion;
+        var resultado = AplicarTransformaciones(expresion, _regexLatex);
 
         resultado = Regex.Replace(resultado, @"u_([a-z]+)", m =>
         {
@@ -52,13 +84,18 @@ public class ServicioParser : IParse
 
         var todosLosTerminos = terminosIzq.Concat(terminosDerNegados).ToArray();
 
+        // Aplicar transformaciones regex a cada término
+        var terminosTransformados = todosLosTerminos
+            .Select(t => t with { Expresion = AplicarTransformaciones(t.Expresion, _regexFunc) })
+            .ToArray();
+
         // Detectar variables
         var variablesDependientes = new[] { "u" };
-        var variablesIndependientes = ExtraerVariablesIndependientes(todosLosTerminos);
-        var orden = CalcularOrden(todosLosTerminos);
+        var variablesIndependientes = ExtraerVariablesIndependientes(terminosTransformados);
+        var orden = CalcularOrden(terminosTransformados);
 
         return new Ecuacion(
-            terminos: todosLosTerminos,
+            terminos: terminosTransformados,
             variablesDependientes: variablesDependientes,
             variablesIndependientes: variablesIndependientes,
             orden: orden,
@@ -135,5 +172,14 @@ public class ServicioParser : IParse
         }
 
         return ordenMax;
+    }
+
+    private string AplicarTransformaciones(string expr, Dictionary<string, string> reglas)
+    {
+        foreach (var (patron, reemplazo) in reglas)
+        {
+            expr = Regex.Replace(expr, patron, reemplazo);
+        }
+        return expr;
     }
 }
