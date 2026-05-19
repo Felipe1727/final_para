@@ -38,10 +38,17 @@ public class ServicioSesion
     public ResultadoResolucionVM? ObtenerResultado(string sessionId) =>
         _cache.TryGetValue(KeyResultado(sessionId), out ResultadoResolucionVM? r) ? r : null;
 
+    public void GuardarConfiguracion(string sessionId, ConfiguracionProblemaVM cfg) =>
+        _cache.Set(KeyConfig(sessionId), cfg, OpcionesTTL());
+
+    public ConfiguracionProblemaVM? ObtenerConfiguracion(string sessionId) =>
+        _cache.TryGetValue(KeyConfig(sessionId), out ConfiguracionProblemaVM? c) ? c : null;
+
     public void Limpiar(string sessionId)
     {
         _cache.Remove(KeyEcuacion(sessionId));
         _cache.Remove(KeyEcuacionVM(sessionId));
+        _cache.Remove(KeyConfig(sessionId));
         _cache.Remove(KeyResultado(sessionId));
     }
 
@@ -50,5 +57,6 @@ public class ServicioSesion
 
     private static string KeyEcuacion(string id) => $"ecuacion:{id}";
     private static string KeyEcuacionVM(string id) => $"ecuacionvm:{id}";
+    private static string KeyConfig(string id) => $"config:{id}";
     private static string KeyResultado(string id) => $"resultado:{id}";
 }

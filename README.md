@@ -56,16 +56,53 @@ El proyecto se encuentra en desarrollo y contiene partes en scaffolding con `Not
 ```text
 final_para/
 ├── final_para.sln
-├── final_para/
+├── final_para/         # librería numérica (no modificar desde la app)
 │   ├── Aspectos/
 │   ├── Ecuaciones/
 │   ├── Estado/
 │   ├── Interfaces/
 │   ├── Metodos/
 │   └── Servicios/
+├── app/                # ASP.NET Core MVC (wizard FDM vs FEM)
+│   ├── Controllers/
+│   ├── Hubs/
+│   ├── Models/
+│   ├── Services/
+│   ├── Views/
+│   └── wwwroot/
 ├── apm.yml
 └── apm.lock.yaml
 ```
+
+## Flujo wizard (`app/`)
+
+La aplicación web es un wizard de cinco pasos con rutas independientes. La sesión HTTP guarda el estado entre páginas.
+
+```text
+GET /                      → 302 → /Wizard/Ecuacion
+GET /Wizard/Ecuacion       (paso 1) entrada y validación LaTeX
+GET /Wizard/Configuracion  (paso 2) dominio, malla, CI/CF, algoritmos
+GET /Wizard/Progreso       (paso 3) ejecuta FDM y FEM con stream SignalR
+GET /Wizard/Resultados     (paso 4) superficie 3D + heatmap + corte
+GET /Wizard/Comparacion    (paso 5) tabla, barras, exportar CSV/JSON
+POST /Wizard/Reiniciar     limpia la sesión y vuelve al paso 1
+```
+
+Endpoints de soporte:
+
+```text
+POST /Ecuacion/Parsear         valida la ecuación y la persiste en sesión
+GET  /Ecuacion/Plantillas      presets (onda, calor, Laplace, transporte, Burgers)
+POST /Wizard/GuardarConfiguracion  persiste la config en sesión antes del paso 3
+POST /Resolucion/Iniciar       ejecuta FDM y FEM en paralelo (Task.WhenAll)
+GET  /Resolucion/SessionId     id de la sesión, requerido por SignalR
+```
+
+Eventos SignalR emitidos por `ServicioResolucion` al grupo `sessionId`:
+
+- `FaseActualizada { fase, estado, porcentaje }` — fases macro (malla, ensamble, resolución, métricas).
+- `ProgresoActualizado { metodo, iteracion, residuo, tiempo }` — log por método.
+- `ResolucionCompleta resultadoId` — al terminar; el cliente navega a `/Wizard/Resultados`.
 
 ## Compilación y pruebas
 

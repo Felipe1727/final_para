@@ -47,7 +47,17 @@ public class EcuacionController : Controller
                 _sesion.GuardarEcuacion(sessionId, ecuacion, vm);
             }
 
-            return Ok(vm);
+            return Ok(new
+            {
+                vm.TextoPlano,
+                vm.Latex,
+                vm.VariablesDependientes,
+                vm.VariablesIndependientes,
+                vm.Orden,
+                vm.EsValida,
+                vm.Errores,
+                siguienteUrl = vm.EsValida ? "/Wizard/Configuracion" : null
+            });
         }
         catch (Exception ex)
         {
@@ -58,5 +68,19 @@ public class EcuacionController : Controller
                 Errores = new[] { $"Error al parsear: {ex.Message}" }
             });
         }
+    }
+
+    [HttpGet]
+    public IActionResult Plantillas()
+    {
+        var plantillas = new[]
+        {
+            new { id = "onda",       nombre = "Onda 1D",    texto = "u_tt = c^2 * u_xx" },
+            new { id = "calor",      nombre = "Calor 1D",   texto = "u_t = alpha * u_xx" },
+            new { id = "laplace",    nombre = "Laplace 2D", texto = "u_xx + u_yy = 0" },
+            new { id = "transporte", nombre = "Transporte", texto = "u_t + a * u_x = 0" },
+            new { id = "burgers",    nombre = "Burgers",    texto = "u_t + u * u_x = nu * u_xx" }
+        };
+        return Ok(plantillas);
     }
 }

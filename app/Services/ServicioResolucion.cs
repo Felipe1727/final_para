@@ -36,8 +36,10 @@ public class ServicioResolucion
     {
         var ecuacion = EcuacionMapper.ConConfiguracion(ecuacionBase, config);
 
+        await EnviarFase(sessionId, "GenerandoMalla", "iniciado", 0, cancellationToken);
         var (mallaFDM, ejeX, ejeT) = _generadorMalla.ConstruirMallaFDM(config);
         var (mallaFEM, ladoFEM) = _generadorMalla.ConstruirMallaFEM(config);
+        await EnviarFase(sessionId, "GenerandoMalla", "completado", 15, cancellationToken);
 
         var publisherComputo = new PublisherComputo(intervalo: Math.Max(1, config.Nx * config.Nt / 100));
         var publisherError = new PublisherError();
@@ -61,26 +63,44 @@ public class ServicioResolucion
         var funcionesBase = SeleccionarFuncionesBase(tipoElemento);
         var algoritmoFEM = ResolverAlgoritmoFEM(config.AlgoritmoFEM);
 
+        await EnviarFase(sessionId, "EnsamblandoFDM", "iniciado", 20, cancellationToken);
         var fdm = fabrica.CrearFDM(mallaFDM, ecuacion, esquema, ordenEspacial: 2, ordenTemporal: 1,
             algoritmoFDM, publisherEvolucion: publisherComputo);
+        await EnviarFase(sessionId, "EnsamblandoFDM", "completado", 30, cancellationToken);
 
+        await EnviarFase(sessionId, "EnsamblandoFEM", "iniciado", 35, cancellationToken);
         var fem = fabrica.CrearFEM(mallaFEM, ecuacion, tipoElemento, funcionesBase, algoritmoFEM);
+        await EnviarFase(sessionId, "EnsamblandoFEM", "completado", 45, cancellationToken);
 
         // Ejecutar ambos en paralelo. Cada Resolver() es síncrono y bloqueante, así que Task.Run.
+        await EnviarFase(sessionId, "ResolviendoFDM", "iniciado", 50, cancellationToken);
+        await EnviarFase(sessionId, "ResolviendoFEM", "iniciado", 50, cancellationToken);
+
         var tareaFDM = Task.Run(() => fdm.Resolver(), cancellationToken);
         var tareaFEM = Task.Run(() => fem.Resolver(), cancellationToken);
 
-        await Task.WhenAll(tareaFDM, tareaFEM);
-
         var estadoFDM = await tareaFDM;
-        var estadoFEM = await tareaFEM;
+        await EnviarFase(sessionId, "ResolviendoFDM", "completado", 75, cancellationToken);
 
+        var estadoFEM = await tareaFEM;
+        await EnviarFase(sessionId, "ResolviendoFEM", "completado", 85, cancellationToken);
+
+        await EnviarFase(sessionId, "CalculandoMetricas", "iniciado", 90, cancellationToken);
         var resultado = ConstruirResultado(estadoFDM, estadoFEM, ejeX, ejeT, ladoFEM, fdm, fem);
+        await EnviarFase(sessionId, "CalculandoMetricas", "completado", 100, cancellationToken);
 
         await _hub.Clients.Group(sessionId).SendAsync("ResolucionCompleta", resultado.Id, cancellationToken);
 
         return resultado;
     }
+
+    private Task EnviarFase(string sessionId, string fase, string estado, int porcentaje, CancellationToken ct) =>
+        _hub.Clients.Group(sessionId).SendAsync("FaseActualizada", new
+        {
+            fase,
+            estado,
+            porcentaje
+        }, ct);
 
     private static ResultadoResolucionVM ConstruirResultado(
         EstadoSolucionFDM estadoFDM,

@@ -93,6 +93,7 @@ public class ServicioParser : IParse
         var variablesDependientes = new[] { "u" };
         var variablesIndependientes = ExtraerVariablesIndependientes(terminosTransformados);
         var orden = CalcularOrden(terminosTransformados);
+        var ordenesPorVariable = CalcularOrdenesPorVariable(terminosTransformados);
         var dependeT = variablesIndependientes.Contains("t");
 
         return new Ecuacion(
@@ -104,7 +105,8 @@ public class ServicioParser : IParse
             condicionesFrontera: Array.Empty<string>(),
             lineal: true,
             geometria: Geometria.Parabolica,
-            dependenciaTiempo: dependeT
+            dependenciaTiempo: dependeT,
+            ordenesPorVariable: ordenesPorVariable
         );
     }
 
@@ -143,17 +145,46 @@ public class ServicioParser : IParse
 
         foreach (var termino in terminos)
         {
-            // Encontrar variables que no sean 'u': x, y, z, t, etc.
-            var match = Regex.Matches(termino.Expresion, @"[a-z]");
-            foreach (Match m in match)
+            // Las variables independientes de una EDP son las que aparecen
+            // en subíndices de derivadas parciales: u_x -> x, u_tt -> t,t, etc.
+            // Los demás símbolos sueltos (c, nu, alpha...) son parámetros.
+            var matches = Regex.Matches(termino.Expresion, @"u_([a-z]+)");
+            foreach (Match m in matches)
             {
-                var c = m.Value[0];
-                if (c != 'u')
+                foreach (var c in m.Groups[1].Value)
+                {
                     variables.Add(c);
+                }
             }
         }
 
         return variables.OrderBy(v => v).Select(v => v.ToString()).ToArray();
+    }
+
+    // Calcula el orden máximo de derivación por variable independiente.
+    // Recorre cada patrón u_<subindices> y cuenta la multiplicidad de cada
+    // letra dentro del subíndice (p.ej. u_xxy -> {x:2, y:1}). Se queda con
+    // el máximo a lo largo de todos los términos para cada variable.
+    private Dictionary<string, byte> CalcularOrdenesPorVariable(Termino[] terminos)
+    {
+        var ordenes = new Dictionary<string, byte>();
+        foreach (var termino in terminos)
+        {
+            foreach (Match match in Regex.Matches(termino.Expresion, @"u_([a-z]+)"))
+            {
+                var subindices = match.Groups[1].Value;
+                var counts = subindices
+                    .GroupBy(c => c)
+                    .ToDictionary(g => g.Key.ToString(), g => (byte)g.Count());
+
+                foreach (var (v, count) in counts)
+                {
+                    if (!ordenes.TryGetValue(v, out var actual) || count > actual)
+                        ordenes[v] = count;
+                }
+            }
+        }
+        return ordenes;
     }
 
     private byte CalcularOrden(Termino[] terminos)

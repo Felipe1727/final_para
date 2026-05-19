@@ -18,9 +18,7 @@ public class HomeController : Controller
     public IActionResult Index()
     {
         HttpContext.Session.SetString("inicializada", "1");
-        var sessionId = HttpContext.Session.Id;
-        var vm = _sesion.ObtenerEcuacionVM(sessionId) ?? new EcuacionParseadaVM();
-        return View(vm);
+        return RedirectToAction("Ecuacion", "Wizard");
     }
 
     [HttpPost]
