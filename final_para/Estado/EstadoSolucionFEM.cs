@@ -9,4 +9,17 @@ public class EstadoSolucionFEM : EstadoSolucion
     {
         ValorActual = valorActual;
     }
+
+    public EstadoSolucionFEM(
+        double residuo,
+        double[] valorActual,
+        int tamanoMalla,
+        uint numIteraciones,
+        double tiempoSegundos,
+        string metodoNombre,
+        DateTime? timestampEvento = null)
+        : base(residuo, tamanoMalla, numIteraciones, tiempoSegundos, metodoNombre, timestampEvento)
+    {
+        ValorActual = valorActual;
+    }
 }
