@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.SignalR;
 namespace app.Services;
 
 /// <summary>
-/// Orquesta una resolución simultánea con FDM y FEM. Lee la ecuación de sesión,
-/// instancia los métodos vía FabricaMetodoNumerico (proxy con interceptores), suscribe
+/// Orquesta una resolución simultánea con dos algoritmos FDM. Lee la ecuación de sesión,
+/// instancia ambos métodos vía FabricaMetodoNumerico (proxy con interceptores), suscribe
 /// eventos del PublisherComputo a un Hub SignalR y devuelve un ResultadoResolucionVM.
 /// </summary>
 public class ServicioResolucion
@@ -37,7 +37,7 @@ public class ServicioResolucion
         var ecuacion = EcuacionMapper.ConConfiguracion(ecuacionBase, config);
 
         var (mallaFDM, ejeX, ejeT) = _generadorMalla.ConstruirMallaFDM(config);
-        var (mallaFEM, ladoFEM) = _generadorMalla.ConstruirMallaFEM(config);
+        var (mallaFDM2, _, _) = _generadorMalla.ConstruirMallaFDM(config);
 
         var publisherComputo = new PublisherComputo(intervalo: Math.Max(1, config.Nx * config.Nt / 100));
         var publisherError = new PublisherError();
@@ -57,25 +57,24 @@ public class ServicioResolucion
 
         var esquema = ParsearEsquema(config.EsquemaTemporal);
         var algoritmoFDM = ResolverAlgoritmoFDM(config.AlgoritmoFDM);
-        var tipoElemento = ParsearTipoElemento(config.TipoElemento);
-        var funcionesBase = SeleccionarFuncionesBase(tipoElemento);
-        var algoritmoFEM = ResolverAlgoritmoFEM(config.AlgoritmoFEM);
+        var algoritmoFDM2 = AlgoritmoComplementario(algoritmoFDM);
 
         var fdm = fabrica.CrearFDM(mallaFDM, ecuacion, esquema, ordenEspacial: 2, ordenTemporal: 1,
             algoritmoFDM, publisherEvolucion: publisherComputo);
 
-        var fem = fabrica.CrearFEM(mallaFEM, ecuacion, tipoElemento, funcionesBase, algoritmoFEM);
+        var fdm2 = fabrica.CrearFDM(mallaFDM2, ecuacion, esquema, ordenEspacial: 2, ordenTemporal: 1,
+            algoritmoFDM2, publisherEvolucion: publisherComputo);
 
         // Ejecutar ambos en paralelo. Cada Resolver() es síncrono y bloqueante, así que Task.Run.
         var tareaFDM = Task.Run(() => fdm.Resolver(), cancellationToken);
-        var tareaFEM = Task.Run(() => fem.Resolver(), cancellationToken);
+        var tareaFDM2 = Task.Run(() => fdm2.Resolver(), cancellationToken);
 
-        await Task.WhenAll(tareaFDM, tareaFEM);
+        await Task.WhenAll(tareaFDM, tareaFDM2);
 
         var estadoFDM = await tareaFDM;
-        var estadoFEM = await tareaFEM;
+        var estadoFDM2 = await tareaFDM2;
 
-        var resultado = ConstruirResultado(estadoFDM, estadoFEM, ejeX, ejeT, ladoFEM, fdm, fem);
+        var resultado = ConstruirResultado(estadoFDM, estadoFDM2, ejeX, ejeT, fdm, fdm2);
 
         await _hub.Clients.Group(sessionId).SendAsync("ResolucionCompleta", resultado.Id, cancellationToken);
 
@@ -84,15 +83,14 @@ public class ServicioResolucion
 
     private static ResultadoResolucionVM ConstruirResultado(
         EstadoSolucionFDM estadoFDM,
-        EstadoSolucionFEM estadoFEM,
+        EstadoSolucionFDM estadoFDM2,
         double[] ejeX,
         double[] ejeT,
-        int ladoFEM,
         FDM fdm,
-        FEM fem)
+        FDM fdm2)
     {
         var mallaFDMResultado = estadoFDM.ValorActual;
-        var mallaFEMResultado = ReorganizarFEM(estadoFEM.ValorActual, ladoFEM);
+        var mallaFDM2Resultado = estadoFDM2.ValorActual;
 
         var metricasFDM = new MetricaVM
         {
@@ -104,53 +102,37 @@ public class ServicioResolucion
             TamanoMalla = estadoFDM.TamanoMalla
         };
 
-        var metricasFEM = new MetricaVM
+        var metricasFDM2 = new MetricaVM
         {
-            MetodoNombre = estadoFEM.MetodoNombre,
-            TiempoSegundos = estadoFEM.TiempoSegundos,
-            Residuo = estadoFEM.Residuo,
-            Error = fem.CalcularError(),
-            NumIteraciones = estadoFEM.NumIteraciones,
-            TamanoMalla = estadoFEM.TamanoMalla
+            MetodoNombre = estadoFDM2.MetodoNombre,
+            TiempoSegundos = estadoFDM2.TiempoSegundos,
+            Residuo = estadoFDM2.Residuo,
+            Error = fdm2.CalcularError(),
+            NumIteraciones = estadoFDM2.NumIteraciones,
+            TamanoMalla = estadoFDM2.TamanoMalla
         };
 
         var comparacion = new ComparacionVM
         {
-            DiferenciaTiempo = metricasFEM.TiempoSegundos - metricasFDM.TiempoSegundos,
-            DiferenciaError = metricasFEM.Error - metricasFDM.Error,
-            GanadorTiempo = metricasFDM.TiempoSegundos <= metricasFEM.TiempoSegundos ? "FDM" : "FEM",
-            GanadorError = metricasFDM.Error <= metricasFEM.Error ? "FDM" : "FEM"
+            DiferenciaTiempo = metricasFDM2.TiempoSegundos - metricasFDM.TiempoSegundos,
+            DiferenciaError = metricasFDM2.Error - metricasFDM.Error,
+            GanadorTiempo = metricasFDM.TiempoSegundos <= metricasFDM2.TiempoSegundos
+                ? metricasFDM.MetodoNombre : metricasFDM2.MetodoNombre,
+            GanadorError = metricasFDM.Error <= metricasFDM2.Error
+                ? metricasFDM.MetodoNombre : metricasFDM2.MetodoNombre
         };
 
         return new ResultadoResolucionVM
         {
             Id = Guid.NewGuid().ToString("N"),
             MallaFDM = mallaFDMResultado,
-            MallaFEM = mallaFEMResultado,
+            MallaFEM = mallaFDM2Resultado,
             EjeX = ejeX,
             EjeY = ejeT,
             MetricasFDM = metricasFDM,
-            MetricasFEM = metricasFEM,
+            MetricasFEM = metricasFDM2,
             Comparacion = comparacion
         };
-    }
-
-    private static double[][] ReorganizarFEM(double[] solucion, int lado)
-    {
-        if (lado * lado != solucion.Length)
-        {
-            // Fallback: devolver como una sola fila.
-            return new double[][] { solucion };
-        }
-
-        var malla = new double[lado][];
-        for (int i = 0; i < lado; i++)
-        {
-            malla[i] = new double[lado];
-            for (int j = 0; j < lado; j++)
-                malla[i][j] = solucion[i * lado + j];
-        }
-        return malla;
     }
 
     private static EsquemaTemporal ParsearEsquema(string s) => s switch
@@ -158,12 +140,6 @@ public class ServicioResolucion
         "Explicito" => EsquemaTemporal.Explicito,
         "CrankNicolson" => EsquemaTemporal.CrankNicolson,
         _ => EsquemaTemporal.Implicito
-    };
-
-    private static TipoElemento ParsearTipoElemento(string s) => s switch
-    {
-        "Triangular" => TipoElemento.Triangular,
-        _ => TipoElemento.Cuadrilateral
     };
 
     private static AlgoritmoFDM ResolverAlgoritmoFDM(string nombre) => nombre switch
@@ -177,16 +153,8 @@ public class ServicioResolucion
         _ => AlgoritmosFDM.BackwardEuler
     };
 
-    private static AlgoritmoFEM ResolverAlgoritmoFEM(string nombre) => nombre switch
-    {
-        "PetrovGalerkin" => AlgoritmosFEM.PetrovGalerkin,
-        "GradienteConjugado" => AlgoritmosFEM.GradienteConjugado,
-        _ => AlgoritmosFEM.Galerkin
-    };
-
-    private static FuncionBase[] SeleccionarFuncionesBase(TipoElemento tipo) => tipo switch
-    {
-        TipoElemento.Triangular => FuncionesBase.TriangularLineales,
-        _ => FuncionesBase.CuadrilateralBilineales
-    };
+    private static AlgoritmoFDM AlgoritmoComplementario(AlgoritmoFDM algoritmo) =>
+        algoritmo == AlgoritmosFDM.ForwardEuler
+            ? AlgoritmosFDM.BackwardEuler
+            : AlgoritmosFDM.ForwardEuler;
 }
