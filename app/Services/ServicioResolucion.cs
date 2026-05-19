@@ -36,10 +36,12 @@ public class ServicioResolucion
     {
         var ecuacion = EcuacionMapper.ConConfiguracion(ecuacionBase, config);
 
-        var (mallaFDM, ejeX, ejeT) = _generadorMalla.ConstruirMallaFDM(config);
-        var (mallaFEM, ladoFEM) = _generadorMalla.ConstruirMallaFEM(config);
+        var (mallaFDM, ejeX, ejeT, nombreEje2) = _generadorMalla.ConstruirMallaFDM(config, ecuacion);
+        var (mallaFEM, ladoFEM, _) = _generadorMalla.ConstruirMallaFEM(config, ecuacion);
 
-        var publisherComputo = new PublisherComputo(intervalo: Math.Max(1, config.Nx * config.Nt / 100));
+        var n1 = mallaFDM.Length;
+        var n2 = n1 > 0 ? mallaFDM[0].Length : 0;
+        var publisherComputo = new PublisherComputo(intervalo: Math.Max(1, (n1 * n2) / 100));
         var publisherError = new PublisherError();
         var fabrica = new FabricaMetodoNumerico(publisherComputo, publisherError);
 
@@ -75,7 +77,7 @@ public class ServicioResolucion
         var estadoFDM = await tareaFDM;
         var estadoFEM = await tareaFEM;
 
-        var resultado = ConstruirResultado(estadoFDM, estadoFEM, ejeX, ejeT, ladoFEM, fdm, fem);
+        var resultado = ConstruirResultado(estadoFDM, estadoFEM, ejeX, ejeT, ladoFEM, fdm, fem, nombreEje2);
 
         await _hub.Clients.Group(sessionId).SendAsync("ResolucionCompleta", resultado.Id, cancellationToken);
 
@@ -89,7 +91,8 @@ public class ServicioResolucion
         double[] ejeT,
         int ladoFEM,
         FDM fdm,
-        FEM fem)
+        FEM fem,
+        string nombreEje2)
     {
         var mallaFDMResultado = estadoFDM.ValorActual;
         var mallaFEMResultado = ReorganizarFEM(estadoFEM.ValorActual, ladoFEM);
@@ -129,6 +132,7 @@ public class ServicioResolucion
             MallaFEM = mallaFEMResultado,
             EjeX = ejeX,
             EjeY = ejeT,
+            NombreEje2 = nombreEje2,
             MetricasFDM = metricasFDM,
             MetricasFEM = metricasFEM,
             Comparacion = comparacion
