@@ -8,8 +8,22 @@
 !final_para.sln
 !final_para/
 !final_para/**
+!app/
+!app/**
+!aplicacion_prueba/
+!aplicacion_prueba/**
+!final_para.Tests/
+!final_para.Tests/**
 final_para/bin/
 final_para/obj/
+
+# Ignorar artefactos de compilación para las aplicaciones y tests
+app/bin/
+app/obj/
+aplicacion_prueba/bin/
+aplicacion_prueba/obj/
+final_para.Tests/bin/
+final_para.Tests/obj/
 
 # Rutas tipicas generadas por ai-harness-setup (se mantienen ignoradas)
 .agents/

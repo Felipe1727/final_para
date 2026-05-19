@@ -1,0 +1,168 @@
+@model app.Models.ViewModels.EcuacionParseadaVM
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div id="app-edp" data-ecuacion-valida="@(Model.EsValida ? "true" : "false")">
+
+    <!-- PASO 1: ECUACIÓN -->
+    <section id="paso-1" class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Paso 1 · Ecuación</h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#panel-notacion">
+                Notación de subíndices
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="panel-notacion" class="collapse mb-3">
+                <div class="alert alert-info small mb-0">
+                    <strong>Notación de derivadas:</strong>
+                    <code>u_t</code> = ∂u/∂t,
+                    <code>u_x</code> = ∂u/∂x,
+                    <code>u_tt</code> = ∂²u/∂t²,
+                    <code>u_xx</code> = ∂²u/∂x²,
+                    <code>u_xy</code> = ∂²u/(∂x∂y).
+                    <br />
+                    Ejemplos: <code>u_tt = u_xx</code> (onda), <code>u_t = u_xx</code> (calor), <code>u_xx + u_yy = 0</code> (Laplace).
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="texto-ecuacion" class="form-label">Ingrese la ecuación (texto plano con subíndices)</label>
+                <input type="text" class="form-control form-control-lg" id="texto-ecuacion"
+                       placeholder="u_tt = u_xx" value="@Model.TextoPlano" autocomplete="off" />
+            </div>
+            <button id="btn-parsear" class="btn btn-primary">Verificar y mostrar LaTeX</button>
+
+            <div id="resultado-parseo" class="mt-4 @(string.IsNullOrEmpty(Model.Latex) ? "d-none" : "")">
+                <h6 class="text-muted">Ecuación interpretada:</h6>
+                <div id="latex-render" class="border rounded p-3 bg-light fs-4 text-center">
+                    @if (!string.IsNullOrEmpty(Model.Latex))
+                    {
+                        @Html.Raw("\\(" + Model.Latex + "\\)")
+                    }
+                </div>
+                <div id="meta-ecuacion" class="small text-muted mt-2 @(Model.EsValida ? "" : "d-none")">
+                    Variables: <span id="meta-vars">@string.Join(", ", Model.VariablesIndependientes)</span>
+                    · Orden: <span id="meta-orden">@Model.Orden</span>
+                </div>
+                <div id="errores-parseo" class="alert alert-danger mt-2 @(Model.Errores.Count > 0 ? "" : "d-none")">
+                    <strong>Errores:</strong>
+                    <ul class="mb-0">
+                        @foreach (var err in Model.Errores)
+                        {
+                            <li>@err</li>
+                        }
+                    </ul>
+                </div>
+                <button id="btn-continuar" class="btn btn-success mt-3 @(Model.EsValida ? "" : "d-none")">
+                    Continuar al paso 2 →
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- PASO 2: CONFIGURACIÓN -->
+    <section id="paso-2" class="card mb-4 @(Model.EsValida ? "" : "d-none")">
+        <div class="card-header"><h5 class="mb-0">Paso 2 · Configuración del problema</h5></div>
+        <div class="card-body">
+            <form id="form-config">
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="form-label">x mínimo</label>
+                        <input type="number" step="any" name="XMin" value="0" class="form-control" /></div>
+                    <div class="col-md-3"><label class="form-label">x máximo</label>
+                        <input type="number" step="any" name="XMax" value="1" class="form-control" /></div>
+                    <div class="col-md-3"><label class="form-label">t mínimo</label>
+                        <input type="number" step="any" name="TMin" value="0" class="form-control" /></div>
+                    <div class="col-md-3"><label class="form-label">t máximo</label>
+                        <input type="number" step="any" name="TMax" value="1" class="form-control" /></div>
+
+                    <div class="col-md-3"><label class="form-label">Puntos en x (Nx)</label>
+                        <input type="number" name="Nx" value="25" min="3" max="300" class="form-control" /></div>
+                    <div class="col-md-3"><label class="form-label">Puntos en t (Nt)</label>
+                        <input type="number" name="Nt" value="25" min="3" max="300" class="form-control" /></div>
+
+                    <div class="col-md-4"><label class="form-label">Condición inicial u(x,0)</label>
+                        <input type="text" name="CondicionInicial" value="sin(pi*x)" class="form-control" />
+                        <small class="text-muted">Ej: <code>sin(pi*x)</code>, <code>x*(1-x)</code>, <code>0</code></small></div>
+                    <div class="col-md-3"><label class="form-label">C.F. izq. u(xMin, t)</label>
+                        <input type="text" name="CondicionFronteraIzq" value="0" class="form-control" /></div>
+                    <div class="col-md-3"><label class="form-label">C.F. der. u(xMax, t)</label>
+                        <input type="text" name="CondicionFronteraDer" value="0" class="form-control" /></div>
+                </div>
+
+                <hr class="my-3" />
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="form-label">Algoritmo FDM</label>
+                        <select name="AlgoritmoFDM" class="form-select">
+                            <option value="BackwardEuler" selected>BackwardEuler</option>
+                            <option value="ForwardEuler">ForwardEuler</option>
+                            <option value="CrankNicolson">CrankNicolson</option>
+                            <option value="JacobiLaplace">JacobiLaplace</option>
+                            <option value="GaussSeidel">GaussSeidel</option>
+                            <option value="CentralDifference2">CentralDifference2</option>
+                            <option value="CentralDifference4">CentralDifference4</option>
+                        </select></div>
+                    <div class="col-md-3"><label class="form-label">Esquema temporal</label>
+                        <select name="EsquemaTemporal" class="form-select">
+                            <option value="Implicito" selected>Implícito</option>
+                            <option value="Explicito">Explícito</option>
+                            <option value="CrankNicolson">CrankNicolson</option>
+                        </select></div>
+                    <div class="col-md-3"><label class="form-label">Algoritmo FEM</label>
+                        <select name="AlgoritmoFEM" class="form-select">
+                            <option value="Galerkin" selected>Galerkin</option>
+                            <option value="PetrovGalerkin">PetrovGalerkin</option>
+                            <option value="GradienteConjugado">GradienteConjugado</option>
+                        </select></div>
+                    <div class="col-md-3"><label class="form-label">Tipo de elemento</label>
+                        <select name="TipoElemento" class="form-select">
+                            <option value="Cuadrilateral" selected>Cuadrilateral (Q1)</option>
+                            <option value="Triangular">Triangular (P1)</option>
+                        </select></div>
+                </div>
+
+                <button id="btn-resolver" class="btn btn-primary mt-4" type="submit">Resolver con FDM y FEM</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- PASO 3: RESULTADOS -->
+    <section id="paso-3" class="card mb-4 d-none">
+        <div class="card-header"><h5 class="mb-0">Paso 3 · Resultados</h5></div>
+        <div class="card-body">
+            <div id="panel-progreso" class="alert alert-secondary d-none">
+                <strong>Resolviendo…</strong>
+                <div id="progreso-mensajes" class="small mt-2 font-monospace"></div>
+            </div>
+
+            <div id="panel-resultados" class="d-none">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-center">FDM</h6>
+                        <div id="grafico-fdm" style="height: 380px;"></div>
+                        <table class="table table-sm mt-2"><tbody id="metricas-fdm"></tbody></table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-center">FEM</h6>
+                        <div id="grafico-fem" style="height: 380px;"></div>
+                        <table class="table table-sm mt-2"><tbody id="metricas-fem"></tbody></table>
+                    </div>
+                </div>
+                <div id="panel-comparacion" class="mt-3"></div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <script src="~/js/paso1-ecuacion.js" asp-append-version="true"></script>
+    <script src="~/js/paso2-configurar.js" asp-append-version="true"></script>
+    <script src="~/js/paso3-resultados.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+        });
+    </script>
+}
