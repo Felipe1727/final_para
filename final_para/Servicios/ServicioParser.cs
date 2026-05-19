@@ -143,13 +143,16 @@ public class ServicioParser : IParse
 
         foreach (var termino in terminos)
         {
-            // Encontrar variables que no sean 'u': x, y, z, t, etc.
-            var match = Regex.Matches(termino.Expresion, @"[a-z]");
-            foreach (Match m in match)
+            // Las variables independientes de una EDP son las que aparecen
+            // en subíndices de derivadas parciales: u_x -> x, u_tt -> t,t, etc.
+            // Los demás símbolos sueltos (c, nu, alpha...) son parámetros.
+            var matches = Regex.Matches(termino.Expresion, @"u_([a-z]+)");
+            foreach (Match m in matches)
             {
-                var c = m.Value[0];
-                if (c != 'u')
+                foreach (var c in m.Groups[1].Value)
+                {
                     variables.Add(c);
+                }
             }
         }
 

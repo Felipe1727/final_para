@@ -45,6 +45,7 @@ public class ResolucionController : Controller
 
         try
         {
+            _sesion.GuardarConfiguracion(sessionId, config);
             var resultado = await _servicio.ResolverAsync(sessionId, ecuacion, config, HttpContext.RequestAborted);
             _sesion.GuardarResultado(sessionId, resultado);
             return Ok(resultado);
