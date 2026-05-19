@@ -15,6 +15,14 @@ public class Ecuacion
     public Geometria Geometria { get; protected set; }
     public bool DependenciaTiempo { get; protected set; }
 
+    // Orden máximo de derivación por cada variable independiente.
+    // Stub mínimo añadido por Unit 5: cuando no se provee, se construye un
+    // fallback asignando `Orden` a cada variable independiente.
+    // ej. Laplace u_xx + u_yy = 0  -> { "x": 2, "y": 2 }
+    //     onda    u_tt - u_xx = 0  -> { "t": 2, "x": 2 }
+    //     calor   u_t  - u_xx = 0  -> { "t": 1, "x": 2 }
+    public IReadOnlyDictionary<string, byte> OrdenesPorVariable { get; protected set; }
+
     public Ecuacion(
         Termino[] terminos,
         string[] variablesDependientes,
@@ -24,7 +32,8 @@ public class Ecuacion
         string[] condicionesFrontera,
         bool lineal,
         Geometria geometria,
-        bool dependenciaTiempo)
+        bool dependenciaTiempo,
+        IReadOnlyDictionary<string, byte>? ordenesPorVariable = null)
     {
         Terminos = terminos;
         VariablesDependientes = variablesDependientes;
@@ -35,7 +44,29 @@ public class Ecuacion
         Lineal = lineal;
         Geometria = geometria;
         DependenciaTiempo = dependenciaTiempo;
+        OrdenesPorVariable = ordenesPorVariable ?? ConstruirOrdenesFallback(variablesIndependientes, orden);
     }
+
+    private static IReadOnlyDictionary<string, byte> ConstruirOrdenesFallback(
+        string[] variablesIndependientes,
+        byte orden)
+    {
+        var dict = new Dictionary<string, byte>();
+        foreach (var v in variablesIndependientes)
+            dict[v] = orden;
+        return dict;
+    }
+
+    public IEnumerable<string> VariablesEspaciales =>
+        VariablesIndependientes.Where(v => v != "t");
+
+    public bool EsTemporal(string v) => v == "t";
+
+    public int NumCondicionesInicialesRequeridas() =>
+        OrdenesPorVariable.TryGetValue("t", out var k) ? k : 0;
+
+    public int NumCondicionesFronteraRequeridas() =>
+        VariablesEspaciales.Sum(v => (int)OrdenesPorVariable.GetValueOrDefault(v, (byte)0));
 
     public string ConstruirFuncion()
     {
