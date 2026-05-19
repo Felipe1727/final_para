@@ -9,8 +9,8 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Paso 4 · Resultados</h5>
         <div class="small">
-            <span class="badge bg-primary">Alg 1: @Model.MetricasFDM.MetodoNombre</span>
-            <span class="badge bg-danger">Alg 2: @Model.MetricasFEM.MetodoNombre</span>
+            <span class="badge bg-primary">FDM: @Model.MetricasFDM.MetodoNombre</span>
+            <span class="badge bg-danger">FDM: @Model.MetricasFEM.MetodoNombre</span>
         </div>
     </div>
     <div class="card-body">
@@ -24,8 +24,8 @@
         <div class="results-grid">
             <section class="panel-metodo fdm">
                 <h6 class="text-center">
-                    <span class="badge bg-primary">Algoritmo 1</span><br>
-                    <small>@Model.MetricasFDM.MetodoNombre</small>
+                    <span class="badge bg-primary">FDM</span><br>
+                    <strong>@Model.MetricasFDM.MetodoNombre</strong>
                 </h6>
                 <div id="fdm-surface" class="plot-3d"></div>
                 <div id="fdm-heatmap" class="plot-2d"></div>
@@ -33,8 +33,8 @@
             </section>
             <section class="panel-metodo fem">
                 <h6 class="text-center">
-                    <span class="badge bg-danger">Algoritmo 2</span><br>
-                    <small>@Model.MetricasFEM.MetodoNombre</small>
+                    <span class="badge bg-danger">FDM</span><br>
+                    <strong>@Model.MetricasFEM.MetodoNombre</strong>
                 </h6>
                 <div id="fem-surface" class="plot-3d"></div>
                 <div id="fem-heatmap" class="plot-2d"></div>
