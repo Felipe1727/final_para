@@ -5,6 +5,7 @@
 # Archivos/carpetas que SI se versionan
 !.gitignore
 !README.md
+!INTEGRACION_APP.md
 !final_para.sln
 !final_para/
 !final_para/**
