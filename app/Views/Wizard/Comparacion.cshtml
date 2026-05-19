@@ -17,7 +17,18 @@
             <div class="col-md-7">
                 <table class="table compare-table table-sm align-middle">
                     <thead>
-                        <tr><th>Métrica</th><th class="text-center">🔵 @Model.MetricasFDM.MetodoNombre</th><th class="text-center">🔵 @Model.MetricasFEM.MetodoNombre</th><th class="text-center">Ganador</th></tr>
+                        <tr>
+                            <th>Métrica</th>
+                            <th class="text-center">
+                                <span class="badge bg-primary">Algoritmo 1</span><br>
+                                <small>@Model.MetricasFDM.MetodoNombre</small>
+                            </th>
+                            <th class="text-center">
+                                <span class="badge bg-danger">Algoritmo 2</span><br>
+                                <small>@Model.MetricasFEM.MetodoNombre</small>
+                            </th>
+                            <th class="text-center">Ganador</th>
+                        </tr>
                     </thead>
                     <tbody id="cmp-tabla"></tbody>
                 </table>
