@@ -61,4 +61,73 @@ public class Ecuacion
 
     public IEnumerable<Termino> TerminosForzantes =>
         Terminos.Where(t => !Regex.IsMatch(t.Expresion, @"\bu_[a-z]+\b"));
+
+    private IReadOnlyDictionary<string, byte>? _ordenesPorVariableCache;
+
+    /// <summary>
+    /// Orden máximo de derivación detectado por variable independiente.
+    /// Ej.: Laplace u_xx + u_yy = 0 → { "x": 2, "y": 2 };
+    ///      onda u_tt − u_xx = 0 → { "t": 2, "x": 2 };
+    ///      calor u_t − u_xx = 0 → { "t": 1, "x": 2 }.
+    /// </summary>
+    public virtual IReadOnlyDictionary<string, byte> OrdenesPorVariable
+    {
+        get
+        {
+            if (_ordenesPorVariableCache is not null) return _ordenesPorVariableCache;
+
+            var ordenes = new Dictionary<string, byte>();
+            foreach (var termino in Terminos)
+            {
+                foreach (Match m in Regex.Matches(termino.Expresion, @"u_([a-z]+)"))
+                {
+                    var subs = m.Groups[1].Value;
+                    var conteo = new Dictionary<char, byte>();
+                    foreach (var c in subs)
+                    {
+                        conteo[c] = (byte)(conteo.GetValueOrDefault(c, (byte)0) + 1);
+                    }
+                    foreach (var (c, n) in conteo)
+                    {
+                        var key = c.ToString();
+                        if (!ordenes.TryGetValue(key, out var prev) || n > prev)
+                            ordenes[key] = n;
+                    }
+                }
+            }
+
+            // Asegurar que toda variable independiente declarada aparezca al menos con 0.
+            foreach (var v in VariablesIndependientes)
+            {
+                if (!ordenes.ContainsKey(v)) ordenes[v] = 0;
+            }
+
+            _ordenesPorVariableCache = ordenes;
+            return _ordenesPorVariableCache;
+        }
+    }
+
+    /// <summary>Variables independientes que no son temporales (todas salvo "t").</summary>
+    public IEnumerable<string> VariablesEspaciales =>
+        VariablesIndependientes.Where(v => !EsTemporal(v));
+
+    /// <summary>Indica si la variable es la temporal del problema.</summary>
+    public bool EsTemporal(string v) => v == "t";
+
+    /// <summary>Número de condiciones iniciales requeridas = orden temporal.</summary>
+    public int NumCondicionesInicialesRequeridas()
+    {
+        return OrdenesPorVariable.TryGetValue("t", out var k) ? k : 0;
+    }
+
+    /// <summary>
+    /// Número de condiciones de frontera Dirichlet requeridas: para cada variable
+    /// espacial se exige una condición por extremo del dominio (Min y Max),
+    /// es decir orden=k → 2 fronteras por eje espacial (truncado a k=2 como máximo
+    /// usable). En la práctica devolvemos `2 * #(variables espaciales)`.
+    /// </summary>
+    public int NumCondicionesFronteraRequeridas()
+    {
+        return VariablesEspaciales.Count() * 2;
+    }
 }

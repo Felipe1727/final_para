@@ -66,14 +66,48 @@
         }
     });
 
+    // Inputs dinámicos: `name="Min[<var>]"`, `Max[<var>]`, `N[<var>]`,
+    // `CondicionesIniciales[<descriptor>]`, `CondicionesFrontera[<descriptor>]`.
+    // Inputs simples (sin corchete): se asignan tal cual al objeto raíz
+    // — esto cubre los selects `EsquemaTemporal`, `AlgoritmoFDM`,
+    // `AlgoritmoFEM`, `TipoElemento`.
     function leerFormulario(form) {
+        const obj = {
+            Min: {},
+            Max: {},
+            N: {},
+            CondicionesIniciales: {},
+            CondicionesFrontera: {}
+        };
+
+        const re = /^(\w+)\[(.+)\]$/;
+        const numericosPorBucket = {
+            Min: (v) => Number(v),
+            Max: (v) => Number(v),
+            N: (v) => parseInt(v, 10),
+            CondicionesIniciales: (v) => String(v),
+            CondicionesFrontera: (v) => String(v)
+        };
+
         const fd = new FormData(form);
-        const obj = {};
         for (const [k, v] of fd.entries()) {
-            // Convertir numéricos detectables
-            const num = Number(v);
-            obj[k] = (v !== '' && !isNaN(num) && /^-?\d/.test(v)) ? num : v;
+            const m = re.exec(k);
+            if (m) {
+                const bucket = m[1];
+                const clave = m[2];
+                const conv = numericosPorBucket[bucket];
+                if (conv && bucket in obj) {
+                    obj[bucket][clave] = conv(v);
+                } else {
+                    // Bucket desconocido: lo guardamos como diccionario suelto.
+                    obj[bucket] = obj[bucket] || {};
+                    obj[bucket][clave] = v;
+                }
+            } else {
+                obj[k] = v;
+            }
         }
+
         return obj;
     }
 })();
