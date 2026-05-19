@@ -1,33 +1,58 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace app.Models.ViewModels;
 
 public class ConfiguracionProblemaVM
 {
-    [Range(typeof(double), "-1000", "1000")]
-    public double XMin { get; set; } = 0.0;
+    public Dictionary<string, double> Min { get; set; } = new()
+    {
+        ["x"] = 0.0,
+        ["t"] = 0.0
+    };
 
-    [Range(typeof(double), "-1000", "1000")]
-    public double XMax { get; set; } = 1.0;
+    public Dictionary<string, double> Max { get; set; } = new()
+    {
+        ["x"] = 1.0,
+        ["t"] = 1.0
+    };
 
-    [Range(typeof(double), "-1000", "1000")]
-    public double TMin { get; set; } = 0.0;
+    public Dictionary<string, int> N { get; set; } = new()
+    {
+        ["x"] = 30,
+        ["t"] = 30
+    };
 
-    [Range(typeof(double), "-1000", "1000")]
-    public double TMax { get; set; } = 1.0;
+    public Dictionary<string, string> CondicionesIniciales { get; set; } = new();
+    public Dictionary<string, string> CondicionesFrontera { get; set; } = new();
 
-    [Range(3, 300)]
-    public int Nx { get; set; } = 30;
-
-    [Range(3, 300)]
-    public int Nt { get; set; } = 30;
-
-    public string CondicionInicial { get; set; } = "sin(pi*x)";
-    public string CondicionFronteraIzq { get; set; } = "0";
-    public string CondicionFronteraDer { get; set; } = "0";
-
-    public string AlgoritmoFDM { get; set; } = "BackwardEuler";
     public string EsquemaTemporal { get; set; } = "Implicito";
-    public string AlgoritmoFEM { get; set; } = "Galerkin";
+    public string AlgoritmoFDM { get; set; } = "BackwardEuler";
     public string TipoElemento { get; set; } = "Cuadrilateral";
+    public string AlgoritmoFEM { get; set; } = "Galerkin";
+
+    public double XMin => Min.GetValueOrDefault("x", 0.0);
+    public double XMax => Max.GetValueOrDefault("x", 1.0);
+    public double TMin => Min.GetValueOrDefault("t", 0.0);
+    public double TMax => Max.GetValueOrDefault("t", 1.0);
+    public int Nx => N.GetValueOrDefault("x", 30);
+    public int Nt => N.GetValueOrDefault("t", 30);
+
+    public string CondicionInicial =>
+        CondicionesIniciales.Count > 0
+            ? CondicionesIniciales.OrderBy(p => p.Key, StringComparer.Ordinal).First().Value
+            : string.Empty;
+
+    public string CondicionFronteraIzq =>
+        BuscarFronteraPorExtremo("Min") ?? string.Empty;
+
+    public string CondicionFronteraDer =>
+        BuscarFronteraPorExtremo("Max") ?? string.Empty;
+
+    private string? BuscarFronteraPorExtremo(string extremo)
+    {
+        foreach (var par in CondicionesFrontera.OrderBy(p => p.Key, StringComparer.Ordinal))
+        {
+            if (par.Key.Contains(extremo, StringComparison.OrdinalIgnoreCase))
+                return par.Value;
+        }
+        return null;
+    }
 }
