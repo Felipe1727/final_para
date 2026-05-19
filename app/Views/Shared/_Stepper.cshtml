@@ -1,0 +1,21 @@
+@model int
+@{
+    var pasos = new[]
+    {
+        new { N = 1, Nombre = "Ecuación",      Url = "/Wizard/Ecuacion" },
+        new { N = 2, Nombre = "Configuración", Url = "/Wizard/Configuracion" },
+        new { N = 3, Nombre = "Progreso",      Url = "/Wizard/Progreso" },
+        new { N = 4, Nombre = "Resultados",    Url = "/Wizard/Resultados" },
+        new { N = 5, Nombre = "Comparación",   Url = "/Wizard/Comparacion" }
+    };
+}
+<ol class="stepper" aria-label="Pasos del wizard">
+    @foreach (var p in pasos)
+    {
+        var estado = p.N < Model ? "done" : (p.N == Model ? "active" : "pending");
+        <li class="stepper-item @estado">
+            <span class="stepper-dot">@p.N</span>
+            <span class="stepper-label">@p.Nombre</span>
+        </li>
+    }
+</ol>

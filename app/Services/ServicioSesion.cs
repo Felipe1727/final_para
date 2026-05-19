@@ -30,6 +30,14 @@ public class ServicioSesion
     public EcuacionParseadaVM? ObtenerEcuacionVM(string sessionId) =>
         _cache.TryGetValue(KeyEcuacionVM(sessionId), out EcuacionParseadaVM? vm) ? vm : null;
 
+    public void GuardarConfiguracion(string sessionId, ConfiguracionProblemaVM config)
+    {
+        _cache.Set(KeyConfiguracion(sessionId), config, OpcionesTTL());
+    }
+
+    public ConfiguracionProblemaVM? ObtenerConfiguracion(string sessionId) =>
+        _cache.TryGetValue(KeyConfiguracion(sessionId), out ConfiguracionProblemaVM? cfg) ? cfg : null;
+
     public void GuardarResultado(string sessionId, ResultadoResolucionVM resultado)
     {
         _cache.Set(KeyResultado(sessionId), resultado, OpcionesTTL());
@@ -50,5 +58,6 @@ public class ServicioSesion
 
     private static string KeyEcuacion(string id) => $"ecuacion:{id}";
     private static string KeyEcuacionVM(string id) => $"ecuacionvm:{id}";
+    private static string KeyConfiguracion(string id) => $"configuracion:{id}";
     private static string KeyResultado(string id) => $"resultado:{id}";
 }

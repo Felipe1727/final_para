@@ -1,0 +1,57 @@
+@{
+    Layout = null;
+    var paso = ViewData["Paso"] as int? ?? 1;
+    var titulo = ViewData["Title"] as string ?? "Wizard";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@titulo · final_para</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wizard.css" asp-append-version="true" />
+    <script>
+      window.MathJax = {
+        tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
+        startup: { typeset: false }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+</head>
+<body class="wizard-body">
+    <header class="wizard-header">
+        <div class="container d-flex align-items-center justify-content-between py-3">
+            <a class="wizard-brand" href="/Wizard/Ecuacion">
+                <strong>final_para</strong>
+                <span class="text-muted small ms-2">Comparación FDM (Euler)</span>
+            </a>
+            <form method="post" action="/Wizard/Reiniciar" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Reiniciar</button>
+            </form>
+        </div>
+    </header>
+
+    <div class="container wizard-stepper-wrap">
+        <partial name="_Stepper" model="paso" />
+    </div>
+
+    <main class="container wizard-main py-4">
+        @RenderBody()
+    </main>
+
+    <footer class="wizard-footer border-top text-muted">
+        <div class="container py-3 small">
+            final_para — Comparación de Algoritmos FDM (Forward Euler vs Backward Euler)
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

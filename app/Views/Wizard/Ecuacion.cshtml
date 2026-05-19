@@ -1,0 +1,69 @@
+@model app.Models.ViewModels.EcuacionParseadaVM
+@{
+    Layout = "_WizardLayout";
+    ViewData["Title"] = "Paso 1 · Ecuación";
+    ViewData["Paso"] = 1;
+}
+
+<div id="paso-ecuacion" data-ecuacion-valida="@(Model.EsValida ? "true" : "false")">
+    <div class="card wizard-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Paso 1 · Ecuación</h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-toggle="collapse" data-bs-target="#panel-notacion">
+                Notación de subíndices
+            </button>
+        </div>
+        <div class="card-body">
+            <partial name="Components/_NotacionAyuda" view-data="@(new ViewDataDictionary(ViewData) { ["IdColapso"] = "panel-notacion" })" />
+
+            <div class="mb-3">
+                <label class="form-label small text-muted">Plantillas rápidas</label>
+                <div id="plantillas-lista" class="d-flex flex-wrap gap-2">
+                    <span class="text-muted small">Cargando…</span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="texto-ecuacion" class="form-label">Ingrese la ecuación (texto plano con subíndices)</label>
+                <input type="text" class="form-control form-control-lg" id="texto-ecuacion"
+                       placeholder="u_tt = u_xx" value="@Model.TextoPlano" autocomplete="off" />
+            </div>
+
+            <button id="btn-parsear" class="btn btn-primary">Verificar y mostrar LaTeX</button>
+
+            <div id="resultado-parseo" class="mt-4 @(string.IsNullOrEmpty(Model.Latex) ? "d-none" : "")">
+                <h6 class="text-muted">Ecuación interpretada:</h6>
+                <div id="latex-render" class="border rounded p-3 bg-light fs-4 text-center">
+                    @if (!string.IsNullOrEmpty(Model.Latex))
+                    {
+                        @Html.Raw("\\(" + Model.Latex + "\\)")
+                    }
+                </div>
+                <div id="meta-ecuacion" class="small text-muted mt-2 @(Model.EsValida ? "" : "d-none")">
+                    Variables: <span id="meta-vars">@string.Join(", ", Model.VariablesIndependientes)</span>
+                    · Orden: <span id="meta-orden">@Model.Orden</span>
+                </div>
+                <div id="errores-parseo" class="alert alert-danger mt-2 @(Model.Errores.Count > 0 ? "" : "d-none")">
+                    <strong>Errores:</strong>
+                    <ul class="mb-0">
+                        @foreach (var err in Model.Errores)
+                        {
+                            <li>@err</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+            <button id="btn-continuar" class="btn btn-success @(Model.EsValida ? "" : "d-none")"
+                    data-url="/Wizard/Configuracion">
+                Continuar al paso 2 →
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/paso1-ecuacion.js" asp-append-version="true"></script>
+}

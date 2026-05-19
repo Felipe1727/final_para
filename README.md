@@ -2,12 +2,12 @@
 
 `final_para` es una libreria para la resolucion de ecuaciones diferenciales parciales (EDP) mediante metodos numericos, con enfoque educativo e investigativo.
 
-El proyecto esta disenado para comparar enfoques como **FDM** (Finite Difference Method) y **FEM** (Finite Element Method), y para observar la evolucion de las soluciones usando un flujo orientado a eventos (error y costo computacional).
+El proyecto esta disenado para comparar **algoritmos del metodo FDM** (Finite Difference Method), especificamente esquemas temporales como Forward Euler vs Backward Euler, y para observar la evolucion de las soluciones usando un flujo orientado a eventos (error y costo computacional).
 
 ## Objetivo
 
 - Resolver y estudiar EDP con diferentes estrategias numericas.
-- Facilitar comparaciones entre metodos (FDM/FEM) bajo una misma arquitectura.
+- Facilitar comparaciones entre algoritmos FDM (Forward Euler vs Backward Euler) bajo una misma arquitectura.
 - Trazar el comportamiento del proceso de resolucion mediante eventos e historico de estados.
 
 ## Componentes principales
@@ -21,14 +21,14 @@ Define la abstraccion base `Ecuacion` (funcion, variables, orden, condiciones in
 La clase base `MetodoNumerico` modela la malla (`double[][]`), metadatos de ejecucion y la ecuacion asociada.  
 Sobre ella se construyen:
 
-- `FDM`: configurable con esquema temporal, orden espacial/temporal y un delegate `AlgoritmoFDM`.
-- `FEM`: configurable con tipo de elemento, funciones base y un delegate `AlgoritmoFEM`.
+- `FDM`: configurable con esquema temporal, orden espacial/temporal y un delegate `AlgoritmoFDM` (Forward Euler, Backward Euler, Jacobi, Gauss-Seidel, etc).
+- `FEM`: disponible para uso futuro (no utilizado en la comparacion actual).
 
 ### 3) Estado y aspectos/eventos (`Estado/`, `Aspectos/`, `Servicios/`)
 
-- `EstadoSolucion`, `EstadoSolucionFDM` y `EstadoSolucionFEM` representan snapshots de la solucion.
+- `EstadoSolucion` y `EstadoSolucionFDM` representan snapshots de la solucion.
 - `PublisherComputo` y `PublisherError` publican eventos segun umbrales globales en `ReglasAspectos`.
-- `AspActualizarHistorico` y `Historico` registran la evolucion del proceso.
+- `AspActualizarHistorico` y `Historico` registran la evolucion del proceso para cada algoritmo.
 - Interceptores con Castle DynamicProxy (`ServicioInterceptorComputo`, `ServicioInterceptorError`) permiten enganchar llamadas a `Resolver`.
 
 ### 4) Parser (`Interfaces/IParse`, `Servicios/ServicioParser`)

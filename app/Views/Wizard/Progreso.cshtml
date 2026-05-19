@@ -1,0 +1,54 @@
+@model app.Models.ViewModels.ConfiguracionProblemaVM
+@{
+    Layout = "_WizardLayout";
+    ViewData["Title"] = "Paso 3 · Progreso";
+    ViewData["Paso"] = 3;
+    var ec = ViewBag.Ecuacion as app.Models.ViewModels.EcuacionParseadaVM;
+}
+
+<div class="card wizard-card mb-4">
+    <div class="card-header"><h5 class="mb-0">Paso 3 · Resolviendo</h5></div>
+    <div class="card-body">
+        @if (ec is not null && !string.IsNullOrEmpty(ec.Latex))
+        {
+            <div class="mb-3 small text-muted">
+                Ecuación: <span class="fs-6">@Html.Raw("\\(" + ec.Latex + "\\)")</span>
+            </div>
+        }
+
+        <div class="progress mb-3" style="height: 8px;">
+            <div id="barra-progreso" class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+
+        <ul id="checklist-fases" class="list-unstyled mb-4">
+            <li data-fase="GenerandoMalla"     class="fase-item pendiente">⚪ Generando malla</li>
+            <li data-fase="EnsamblandoFDM"     class="fase-item pendiente"><span class="chip fdm">FDM-1</span> Ensamblando</li>
+            <li data-fase="EnsamblandoFEM"     class="fase-item pendiente"><span class="chip fem">FDM-2</span> Ensamblando</li>
+            <li data-fase="ResolviendoFDM"     class="fase-item pendiente"><span class="chip fdm">FDM-1</span> Resolviendo <span class="fase-iter small text-muted"></span></li>
+            <li data-fase="ResolviendoFEM"     class="fase-item pendiente"><span class="chip fem">FDM-2</span> Resolviendo <span class="fase-iter small text-muted"></span></li>
+            <li data-fase="CalculandoMetricas" class="fase-item pendiente">⚪ Calculando métricas</li>
+        </ul>
+
+        <details>
+            <summary class="small text-muted">Log de iteraciones</summary>
+            <div id="progreso-log" class="small font-monospace mt-2 progreso-log"></div>
+        </details>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="/Wizard/Configuracion" class="btn btn-outline-secondary">← Atrás</a>
+            <button id="btn-cancelar" type="button" class="btn btn-outline-danger">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.__config = @Html.Raw(Json.Serialize(Model));
+    </script>
+    <script src="~/js/paso3-progreso.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+        });
+    </script>
+}

@@ -1,0 +1,220 @@
+:root {
+    --fdm: #C2410C; --fdm-soft: #FEF3EC;
+    --fem: #1E40AF; --fem-soft: #EEF2FF;
+    --ink: #0F172A; --paper: #FAFAF7; --rule: #E5E5E0;
+}
+
+.wizard-body {
+    background: var(--paper);
+    color: var(--ink);
+}
+
+.wizard-header {
+    background: #fff;
+    border-bottom: 1px solid var(--rule);
+}
+
+.wizard-brand {
+    text-decoration: none;
+    color: var(--ink);
+}
+
+.wizard-stepper-wrap {
+    padding-top: 1rem;
+    padding-bottom: 0.5rem;
+}
+
+.wizard-main {
+    min-height: 60vh;
+}
+
+.wizard-card {
+    border: 1px solid var(--rule);
+    background: #fff;
+}
+
+/* ----------------- Stepper ----------------- */
+.stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: paso;
+    gap: 0;
+}
+
+.stepper-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.stepper-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    width: 100%;
+    height: 0;
+    border-top: 2px dashed var(--rule);
+    z-index: 0;
+}
+
+.stepper-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--rule);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    z-index: 1;
+    margin-bottom: 0.4rem;
+}
+
+.stepper-item.done .stepper-dot {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+}
+.stepper-item.done {
+    color: var(--ink);
+}
+.stepper-item.done:not(:last-child)::after {
+    border-top-style: solid;
+    border-top-color: var(--ink);
+}
+
+.stepper-item.active .stepper-dot {
+    background: #fff;
+    border-color: var(--ink);
+    color: var(--ink);
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
+}
+.stepper-item.active {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+/* ----------------- Chips de método ----------------- */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+}
+.chip::before {
+    content: '';
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+.chip.fdm { color: var(--fdm); background: var(--fdm-soft); border-color: var(--fdm); }
+.chip.fem { color: var(--fem); background: var(--fem-soft); border-color: var(--fem); }
+
+/* ----------------- Placeholder rayado ----------------- */
+.placeholder {
+    background: repeating-linear-gradient(
+        45deg,
+        #fafafa,
+        #fafafa 8px,
+        #f0f0eb 8px,
+        #f0f0eb 16px
+    );
+    border: 1px dashed var(--rule);
+    border-radius: 6px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ----------------- Tabla comparativa ----------------- */
+.compare-table th { font-weight: 600; }
+.compare-table .win-fdm {
+    background: var(--fdm-soft);
+    color: var(--fdm);
+    font-weight: 600;
+}
+.compare-table .win-fem {
+    background: var(--fem-soft);
+    color: var(--fem);
+    font-weight: 600;
+}
+
+/* ----------------- Grid de resultados ----------------- */
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+@media (max-width: 768px) {
+    .results-grid { grid-template-columns: 1fr; }
+}
+
+.panel-metodo {
+    padding: 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: #fff;
+}
+.panel-metodo.fdm { border-top: 4px solid var(--fdm); }
+.panel-metodo.fem { border-top: 4px solid var(--fem); }
+
+.plot-3d { height: 320px; }
+.plot-2d { height: 260px; margin-top: 0.5rem; }
+.plot-corte { height: 220px; margin-top: 0.5rem; }
+.plot-comp { height: 280px; }
+
+/* ----------------- Checklist de fases ----------------- */
+.fase-item {
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.fase-item.activo {
+    background: #fff7ed;
+    font-weight: 600;
+}
+.fase-item.hecho {
+    color: #166534;
+}
+.fase-item.pendiente {
+    color: #94a3b8;
+}
+
+.progreso-log {
+    max-height: 220px;
+    overflow-y: auto;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+
+.wizard-footer {
+    background: #fff;
+}

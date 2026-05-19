@@ -1,0 +1,100 @@
+@model app.Models.ViewModels.ConfiguracionProblemaVM
+@{
+    Layout = "_WizardLayout";
+    ViewData["Title"] = "Paso 2 · Configuración";
+    ViewData["Paso"] = 2;
+    var ec = ViewBag.Ecuacion as app.Models.ViewModels.EcuacionParseadaVM;
+}
+
+<div class="card wizard-card mb-3">
+    <div class="card-header"><h6 class="mb-0">Ecuación seleccionada</h6></div>
+    <div class="card-body">
+        @if (ec is not null && !string.IsNullOrEmpty(ec.Latex))
+        {
+            <div id="ecuacion-latex" class="border rounded p-3 bg-light fs-5 text-center">
+                @Html.Raw("\\(" + ec.Latex + "\\)")
+            </div>
+            <div class="small text-muted mt-2">
+                Variables: @string.Join(", ", ec.VariablesIndependientes) · Orden: @ec.Orden
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card wizard-card mb-4">
+    <div class="card-header"><h5 class="mb-0">Paso 2 · Configuración del problema</h5></div>
+    <div class="card-body">
+        <form id="form-config">
+            <h6 class="text-muted">Dominio</h6>
+            <div class="row g-3">
+                <div class="col-md-3"><label class="form-label">x mínimo</label>
+                    <input type="number" step="any" name="XMin" value="@Model.XMin" class="form-control" /></div>
+                <div class="col-md-3"><label class="form-label">x máximo</label>
+                    <input type="number" step="any" name="XMax" value="@Model.XMax" class="form-control" /></div>
+                <div class="col-md-3"><label class="form-label">t mínimo</label>
+                    <input type="number" step="any" name="TMin" value="@Model.TMin" class="form-control" /></div>
+                <div class="col-md-3"><label class="form-label">t máximo</label>
+                    <input type="number" step="any" name="TMax" value="@Model.TMax" class="form-control" /></div>
+            </div>
+
+            <h6 class="text-muted mt-4">Discretización</h6>
+            <div class="row g-3">
+                <div class="col-md-3"><label class="form-label">Puntos en x (Nx)</label>
+                    <input type="number" name="Nx" value="@Model.Nx" min="3" max="300" class="form-control" /></div>
+                <div class="col-md-3"><label class="form-label">Puntos en t (Nt)</label>
+                    <input type="number" name="Nt" value="@Model.Nt" min="3" max="300" class="form-control" /></div>
+            </div>
+
+            <h6 class="text-muted mt-4">Condiciones</h6>
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label">Condición inicial u(x,0)</label>
+                    <input type="text" name="CondicionInicial" value="@Model.CondicionInicial" class="form-control" />
+                    <small class="text-muted">Ej: <code>sin(pi*x)</code>, <code>x*(1-x)</code>, <code>0</code></small></div>
+                <div class="col-md-4"><label class="form-label">C.F. izq. u(xMin, t)</label>
+                    <input type="text" name="CondicionFronteraIzq" value="@Model.CondicionFronteraIzq" class="form-control" /></div>
+                <div class="col-md-4"><label class="form-label">C.F. der. u(xMax, t)</label>
+                    <input type="text" name="CondicionFronteraDer" value="@Model.CondicionFronteraDer" class="form-control" /></div>
+            </div>
+
+            <h6 class="text-muted mt-4">Algoritmos a Comparar</h6>
+            <div class="alert alert-info small mb-3">
+                Se compararán <strong>Forward Euler</strong> vs <strong>Backward Euler</strong>.
+                Selecciona cuál quieres como algoritmo principal.
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label">Algoritmo Principal</label>
+                    <select name="AlgoritmoFDM" class="form-select">
+                        <option value="ForwardEuler" selected="@(Model.AlgoritmoFDM == "ForwardEuler")">🔵 Forward Euler (explícito)</option>
+                        <option value="BackwardEuler" selected="@(Model.AlgoritmoFDM == "BackwardEuler")">🔵 Backward Euler (implícito)</option>
+                    </select>
+                    <small class="text-muted">El segundo algoritmo será el complementario</small>
+                </div>
+                <div class="col-md-6"><label class="form-label">Esquema Temporal</label>
+                    <select name="EsquemaTemporal" class="form-select">
+                        <option value="Implicito" selected="@(Model.EsquemaTemporal == "Implicito")">Implícito</option>
+                        <option value="Explicito" selected="@(Model.EsquemaTemporal == "Explicito")">Explícito</option>
+                        <option value="CrankNicolson" selected="@(Model.EsquemaTemporal == "CrankNicolson")">Crank-Nicolson</option>
+                    </select>
+                </div>
+            </div>
+
+            @* Campos ocultos para mantener retrocompatibilidad *@
+            <input type="hidden" name="AlgoritmoFEM" value="Galerkin" />
+            <input type="hidden" name="TipoElemento" value="Cuadrilateral" />
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="/Wizard/Ecuacion" class="btn btn-outline-secondary">← Atrás</a>
+                <button id="btn-resolver" class="btn btn-primary" type="submit">Resolver con FDM y FEM →</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/paso2-configurar.js" asp-append-version="true"></script>
+    <script>
+        if (window.finalPara && window.finalPara.renderizarLatex) {
+            window.finalPara.renderizarLatex('#ecuacion-latex');
+        }
+    </script>
+}

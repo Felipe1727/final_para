@@ -1,0 +1,20 @@
+@{
+    var idColapso = ViewData["IdColapso"] as string ?? "panel-notacion";
+}
+<div id="@idColapso" class="collapse mb-3">
+    <div class="alert alert-info small mb-0">
+        <strong>Notación de derivadas:</strong>
+        <table class="table table-sm mb-0 mt-2 align-middle small">
+            <thead>
+                <tr><th>Subíndice</th><th>Significado</th><th>Ejemplo</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>u_t</code></td>   <td>∂u/∂t</td>     <td><code>u_t = u_xx</code> — calor</td></tr>
+                <tr><td><code>u_x</code></td>   <td>∂u/∂x</td>     <td><code>u_t + a*u_x = 0</code> — transporte</td></tr>
+                <tr><td><code>u_tt</code></td>  <td>∂²u/∂t²</td>   <td><code>u_tt = c^2 * u_xx</code> — onda</td></tr>
+                <tr><td><code>u_xx</code></td>  <td>∂²u/∂x²</td>   <td><code>u_xx + u_yy = 0</code> — Laplace</td></tr>
+                <tr><td><code>u_xy</code></td>  <td>∂²u/(∂x∂y)</td><td>—</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

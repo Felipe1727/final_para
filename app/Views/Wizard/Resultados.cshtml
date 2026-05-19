@@ -1,0 +1,52 @@
+@model app.Models.ViewModels.ResultadoResolucionVM
+@{
+    Layout = "_WizardLayout";
+    ViewData["Title"] = "Paso 4 · Resultados";
+    ViewData["Paso"] = 4;
+}
+
+<div class="card wizard-card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Paso 4 · Resultados</h5>
+        <div class="small text-muted">
+            🔵 @Model.MetricasFDM.MetodoNombre
+            ·
+            🔵 @Model.MetricasFEM.MetodoNombre
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label for="slider-tiempo" class="form-label small text-muted">
+                Tiempo: <span id="slider-tiempo-valor">0</span>
+            </label>
+            <input type="range" id="slider-tiempo" class="form-range" min="0" max="100" value="0" />
+        </div>
+
+        <div class="results-grid">
+            <section class="panel-metodo fdm">
+                <h6 class="text-center">🔵 @Model.MetricasFDM.MetodoNombre</h6>
+                <div id="fdm-surface" class="plot-3d"></div>
+                <div id="fdm-heatmap" class="plot-2d"></div>
+                <div id="fdm-corte" class="plot-corte"></div>
+            </section>
+            <section class="panel-metodo fem">
+                <h6 class="text-center">🔵 @Model.MetricasFEM.MetodoNombre</h6>
+                <div id="fem-surface" class="plot-3d"></div>
+                <div id="fem-heatmap" class="plot-2d"></div>
+                <div id="fem-corte" class="plot-corte"></div>
+            </section>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="/Wizard/Configuracion" class="btn btn-outline-secondary">← Atrás</a>
+            <a href="/Wizard/Comparacion" class="btn btn-primary">Continuar a comparación →</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.__resultado = @Html.Raw(Json.Serialize(Model));
+    </script>
+    <script src="~/js/paso4-resultados.js" asp-append-version="true"></script>
+}

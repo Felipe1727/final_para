@@ -1,0 +1,48 @@
+@model app.Models.ViewModels.ResultadoResolucionVM
+@{
+    Layout = "_WizardLayout";
+    ViewData["Title"] = "Paso 5 · Comparación";
+    ViewData["Paso"] = 5;
+}
+
+<div class="card wizard-card mb-3">
+    <div class="card-header"><h5 class="mb-0">Paso 5 · Comparación</h5></div>
+    <div class="card-body">
+        <div id="veredicto" class="alert alert-info">
+            <strong>Veredicto:</strong>
+            <span id="veredicto-texto">Calculando…</span>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-7">
+                <table class="table compare-table table-sm align-middle">
+                    <thead>
+                        <tr><th>Métrica</th><th class="text-center">🔵 @Model.MetricasFDM.MetodoNombre</th><th class="text-center">🔵 @Model.MetricasFEM.MetodoNombre</th><th class="text-center">Ganador</th></tr>
+                    </thead>
+                    <tbody id="cmp-tabla"></tbody>
+                </table>
+            </div>
+            <div class="col-md-5">
+                <div id="cmp-barras" class="plot-comp"></div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="/Wizard/Resultados" class="btn btn-outline-secondary">← Resultados</a>
+            <div class="btn-group">
+                <button id="btn-export-csv" class="btn btn-outline-primary">Exportar CSV</button>
+                <button id="btn-export-json" class="btn btn-outline-primary">Exportar JSON</button>
+                <form method="post" action="/Wizard/Reiniciar" class="d-inline">
+                    <button type="submit" class="btn btn-success ms-2">Nueva simulación</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.__resultado = @Html.Raw(Json.Serialize(Model));
+    </script>
+    <script src="~/js/paso5-comparacion.js" asp-append-version="true"></script>
+}
