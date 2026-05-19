@@ -11,4 +11,6 @@ public class ResultadoResolucionVM
     public MetricaVM MetricasFEM { get; set; } = new();
     public ComparacionVM Comparacion { get; set; } = new();
     public List<RegistroProgresoVM> RegistroProgreso { get; set; } = [];
+    public List<EvolucionVM> EvolucionFDM { get; set; } = [];
+    public List<EvolucionVM> EvolucionFEM { get; set; } = [];
 }

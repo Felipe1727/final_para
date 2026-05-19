@@ -8,6 +8,8 @@
     const ejeY = r.ejeY || [];           // tiempo
     const mallaFDM = r.mallaFDM || [];
     const mallaFEM = r.mallaFEM || [];
+    const evolucionFDM = r.evolucionFDM || [];
+    const evolucionFEM = r.evolucionFEM || [];
 
     const slider = document.getElementById('slider-tiempo');
     const sliderValor = document.getElementById('slider-tiempo-valor');
@@ -26,6 +28,9 @@
 
     dibujarCorte('fdm-corte', mallaFDM, ejeX, 0, '#C2410C', 'FDM');
     dibujarCorte('fem-corte', mallaFEM, ejeX, 0, '#1E40AF', 'FEM');
+
+    dibujarEvolucion('fdm-evolucion', evolucionFDM, '#C2410C');
+    dibujarEvolucion('fem-evolucion', evolucionFEM, '#1E40AF');
 
     slider.addEventListener('input', () => {
         const idx = Number(slider.value);
@@ -146,6 +151,32 @@
 
         a.on('plotly_relayout', handler(a, b));
         b.on('plotly_relayout', handler(b, a));
+    }
+
+    function dibujarEvolucion(id, evolucion, color) {
+        const div = document.getElementById(id);
+        if (!div || !evolucion || evolucion.length === 0) {
+            if (div) div.innerHTML = placeholder('Sin datos de evolución');
+            return;
+        }
+        const tiempos = evolucion.map(e => e.tiempo);
+        const residuos = evolucion.map(e => e.residuo);
+        const data = [{
+            type: 'scatter',
+            mode: 'lines',
+            x: tiempos,
+            y: residuos,
+            line: { color: color, width: 2 },
+            name: 'Residuo'
+        }];
+        const layout = {
+            title: { text: 'Evolución · Tiempo vs Residuo', font: { size: 13 } },
+            margin: { l: 40, r: 10, t: 30, b: 40 },
+            height: 260,
+            xaxis: { title: 'Tiempo (s)', type: 'log' },
+            yaxis: { title: 'Residuo', type: 'log' }
+        };
+        Plotly.newPlot(div, data, layout, { responsive: true, displaylogo: false });
     }
 
     function placeholder(msg) {

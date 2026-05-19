@@ -43,9 +43,24 @@ public class ServicioResolucion
         var publisherError = new PublisherError();
         var fabrica = new FabricaMetodoNumerico(publisherComputo, publisherError);
 
+        // Crear históricos para capturar evolución
+        var historicoFDM = new Historico();
+        var historicoFEM = new Historico();
+        var aspHistoricoFDM = new AspActualizarHistorico(historicoFDM);
+        var aspHistoricoFEM = new AspActualizarHistorico(historicoFEM);
+
         // Suscripción: cada evento del publisher empuja al cliente vía SignalR (grupo = sessionId).
         publisherComputo.Evento += async (_, estado) =>
         {
+            // Filtrar eventos a sus respectivos históricos
+            if (estado.MetodoNombre.Contains("Forward") || estado.MetodoNombre.Contains("Backward"))
+            {
+                if (estado.MetodoNombre.StartsWith(ObtenerNombreAlgoritmo(config.AlgoritmoFDM)))
+                    aspHistoricoFDM.EventHandler(null, estado);
+                else
+                    aspHistoricoFEM.EventHandler(null, estado);
+            }
+
             await _hub.Clients.Group(sessionId).SendAsync("ProgresoActualizado", new
             {
                 metodo = estado.MetodoNombre,
@@ -76,7 +91,7 @@ public class ServicioResolucion
         var estadoFDM = await tareaFDM;
         var estadoFDM2 = await tareaFDM2;
 
-        var resultado = ConstruirResultado(estadoFDM, estadoFDM2, ejeX, ejeT, fdm, fdm2);
+        var resultado = ConstruirResultado(estadoFDM, estadoFDM2, ejeX, ejeT, fdm, fdm2, historicoFDM, historicoFEM);
 
         await _hub.Clients.Group(sessionId).SendAsync("ResolucionCompleta", resultado.Id, cancellationToken);
 
@@ -89,7 +104,9 @@ public class ServicioResolucion
         double[] ejeX,
         double[] ejeT,
         FDM fdm,
-        FDM fdm2)
+        FDM fdm2,
+        Historico historicoFDM,
+        Historico historicoFEM)
     {
         var mallaFDMResultado = estadoFDM.ValorActual;
         var mallaFEMResultado = estadoFDM2.ValorActual;
@@ -124,6 +141,14 @@ public class ServicioResolucion
                 ? metricasFDM.MetodoNombre : metricasFEM.MetodoNombre
         };
 
+        var evolucionFDM = historicoFDM.ObtenerRegistros()
+            .Select(e => new EvolucionVM { Tiempo = e.TiempoSegundos, Residuo = e.Residuo })
+            .ToList();
+
+        var evolucionFEM = historicoFEM.ObtenerRegistros()
+            .Select(e => new EvolucionVM { Tiempo = e.TiempoSegundos, Residuo = e.Residuo })
+            .ToList();
+
         return new ResultadoResolucionVM
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -133,7 +158,9 @@ public class ServicioResolucion
             EjeY = ejeT,
             MetricasFDM = metricasFDM,
             MetricasFEM = metricasFEM,
-            Comparacion = comparacion
+            Comparacion = comparacion,
+            EvolucionFDM = evolucionFDM,
+            EvolucionFEM = evolucionFEM
         };
     }
 
