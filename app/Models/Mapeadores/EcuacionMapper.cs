@@ -52,14 +52,21 @@ public static class EcuacionMapper
     public static Ecuacion ConConfiguracion(Ecuacion baseEcuacion, ConfiguracionProblemaVM config)
     {
         bool dependeT = baseEcuacion.VariablesIndependientes.Contains("t");
-        var ci = string.IsNullOrWhiteSpace(config.CondicionInicial)
-            ? Array.Empty<string>()
-            : new[] { $"u(x,0)={config.CondicionInicial}" };
-        var cf = new[]
+        var ci = dependeT ? FormatearCondiciones(config.CondicionesIniciales) : Array.Empty<string>();
+        if (dependeT && ci.Length == 0 && !string.IsNullOrWhiteSpace(config.CondicionInicial))
         {
-            $"u({config.XMin},t)={config.CondicionFronteraIzq}",
-            $"u({config.XMax},t)={config.CondicionFronteraDer}"
-        };
+            ci = new[] { $"u(x,0)={config.CondicionInicial}" };
+        }
+
+        var cf = FormatearCondiciones(config.CondicionesFrontera);
+        if (cf.Length == 0)
+        {
+            cf = new[]
+            {
+                $"u({config.XMin},t)={config.CondicionFronteraIzq}",
+                $"u({config.XMax},t)={config.CondicionFronteraDer}"
+            };
+        }
 
         return new Ecuacion(
             terminos: baseEcuacion.Terminos,
@@ -71,5 +78,17 @@ public static class EcuacionMapper
             lineal: baseEcuacion.Lineal,
             geometria: baseEcuacion.Geometria,
             dependenciaTiempo: dependeT);
+    }
+
+    private static string[] FormatearCondiciones(IReadOnlyDictionary<string, string>? condiciones)
+    {
+        if (condiciones is null || condiciones.Count == 0)
+            return Array.Empty<string>();
+
+        return condiciones
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && !string.IsNullOrWhiteSpace(kv.Value))
+            .OrderBy(kv => kv.Key)
+            .Select(kv => $"{kv.Key}={kv.Value.Trim()}")
+            .ToArray();
     }
 }

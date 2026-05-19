@@ -13,20 +13,28 @@ public class GeneradorMalla
 {
     public (double[][] mallaFDM, double[] ejeX, double[] ejeT) ConstruirMallaFDM(ConfiguracionProblemaVM cfg)
     {
-        int nx = cfg.Nx;
-        int nt = cfg.Nt;
+        var variableEspacial = ResolverVariableEspacial(cfg);
+        var variableTemporal = ResolverVariableTemporal(cfg, variableEspacial);
 
-        var ejeX = LinSpace(cfg.XMin, cfg.XMax, nx);
-        var ejeT = LinSpace(cfg.TMin, cfg.TMax, nt);
+        int nx = ObtenerN(cfg, variableEspacial, cfg.Nx);
+        int nt = ObtenerN(cfg, variableTemporal, cfg.Nt);
+        double xMin = ObtenerMin(cfg, variableEspacial, cfg.XMin);
+        double xMax = ObtenerMax(cfg, variableEspacial, cfg.XMax);
+        double tMin = ObtenerMin(cfg, variableTemporal, cfg.TMin);
+        double tMax = ObtenerMax(cfg, variableTemporal, cfg.TMax);
+
+        var ejeX = LinSpace(xMin, xMax, nx);
+        var ejeT = LinSpace(tMin, tMax, nt);
 
         var malla = new double[nx][];
-        double valIzq = EvaluarConstante(cfg.CondicionFronteraIzq);
-        double valDer = EvaluarConstante(cfg.CondicionFronteraDer);
+        double valIzq = EvaluarConstante(ObtenerCondicionFrontera(cfg, variableEspacial, "Min", cfg.CondicionFronteraIzq));
+        double valDer = EvaluarConstante(ObtenerCondicionFrontera(cfg, variableEspacial, "Max", cfg.CondicionFronteraDer));
+        string condicionInicial = ObtenerCondicionInicial(cfg, cfg.CondicionInicial);
 
         for (int i = 0; i < nx; i++)
         {
             malla[i] = new double[nt];
-            double valorInicial = EvaluarCondicionInicial(cfg.CondicionInicial, ejeX[i]);
+            double valorInicial = EvaluarCondicionInicial(condicionInicial, ejeX[i]);
             for (int j = 0; j < nt; j++)
             {
                 if (j == 0)
@@ -49,12 +57,18 @@ public class GeneradorMalla
     /// </summary>
     public (double[][] mallaFEM, int lado) ConstruirMallaFEM(ConfiguracionProblemaVM cfg)
     {
-        int lado = Math.Max(3, (int)Math.Round(Math.Sqrt(cfg.Nx)));
+        var variableEspacial = ResolverVariableEspacial(cfg);
+        var variableTemporal = ResolverVariableTemporal(cfg, variableEspacial);
+        int lado = Math.Max(3, (int)Math.Round(Math.Sqrt(ObtenerN(cfg, variableEspacial, cfg.Nx))));
         int n = lado * lado;
         var malla = new double[n][];
 
-        double dx = (cfg.XMax - cfg.XMin) / (lado - 1);
-        double dy = (cfg.TMax - cfg.TMin) / (lado - 1);
+        double xMin = ObtenerMin(cfg, variableEspacial, cfg.XMin);
+        double xMax = ObtenerMax(cfg, variableEspacial, cfg.XMax);
+        double yMin = ObtenerMin(cfg, variableTemporal, cfg.TMin);
+        double yMax = ObtenerMax(cfg, variableTemporal, cfg.TMax);
+        double dx = (xMax - xMin) / (lado - 1);
+        double dy = (yMax - yMin) / (lado - 1);
 
         for (int i = 0; i < lado; i++)
         {
@@ -63,13 +77,91 @@ public class GeneradorMalla
                 int idx = i * lado + j;
                 malla[idx] = new double[]
                 {
-                    cfg.XMin + j * dx,
-                    cfg.TMin + i * dy
+                    xMin + j * dx,
+                    yMin + i * dy
                 };
             }
         }
 
         return (malla, lado);
+    }
+
+    private static string ResolverVariableEspacial(ConfiguracionProblemaVM cfg)
+    {
+        if (ContieneVariable(cfg, "x")) return "x";
+        return VariablesConfiguradas(cfg).FirstOrDefault(v => !EsTemporal(v)) ?? "x";
+    }
+
+    private static string ResolverVariableTemporal(ConfiguracionProblemaVM cfg, string variableEspacial)
+    {
+        if (ContieneVariable(cfg, "t")) return "t";
+        return VariablesConfiguradas(cfg).FirstOrDefault(v => v != variableEspacial) ?? "t";
+    }
+
+    private static bool ContieneVariable(ConfiguracionProblemaVM cfg, string v)
+    {
+        return cfg.Min.ContainsKey(v) || cfg.Max.ContainsKey(v) || cfg.N.ContainsKey(v);
+    }
+
+    private static IEnumerable<string> VariablesConfiguradas(ConfiguracionProblemaVM cfg)
+    {
+        return cfg.Min.Keys
+            .Concat(cfg.Max.Keys)
+            .Concat(cfg.N.Keys)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool EsTemporal(string variable) =>
+        string.Equals(variable, "t", StringComparison.OrdinalIgnoreCase);
+
+    private static int ObtenerN(ConfiguracionProblemaVM cfg, string variable, int fallback)
+    {
+        if (cfg.N.TryGetValue(variable, out var n)) return n;
+        return fallback;
+    }
+
+    private static double ObtenerMin(ConfiguracionProblemaVM cfg, string variable, double fallback)
+    {
+        if (cfg.Min.TryGetValue(variable, out var v)) return v;
+        return fallback;
+    }
+
+    private static double ObtenerMax(ConfiguracionProblemaVM cfg, string variable, double fallback)
+    {
+        if (cfg.Max.TryGetValue(variable, out var v)) return v;
+        return fallback;
+    }
+
+    private static string ObtenerCondicionInicial(ConfiguracionProblemaVM cfg, string fallback)
+    {
+        var valor = cfg.CondicionesIniciales
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .OrderBy(kv => kv.Key)
+            .Select(kv => kv.Value)
+            .FirstOrDefault();
+
+        return string.IsNullOrWhiteSpace(valor) ? fallback : valor;
+    }
+
+    private static string ObtenerCondicionFrontera(
+        ConfiguracionProblemaVM cfg,
+        string variableEspacial,
+        string extremo,
+        string fallback)
+    {
+        var valor = cfg.CondicionesFrontera
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .FirstOrDefault(kv => kv.Key.Contains($"{variableEspacial}{extremo}", StringComparison.OrdinalIgnoreCase))
+            .Value;
+
+        if (!string.IsNullOrWhiteSpace(valor)) return valor;
+
+        valor = cfg.CondicionesFrontera
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .FirstOrDefault(kv => kv.Key.Contains(extremo, StringComparison.OrdinalIgnoreCase))
+            .Value;
+
+        return string.IsNullOrWhiteSpace(valor) ? fallback : valor;
     }
 
     private static double[] LinSpace(double inicio, double fin, int n)

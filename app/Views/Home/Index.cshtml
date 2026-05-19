@@ -1,6 +1,19 @@
 @model app.Models.ViewModels.EcuacionParseadaVM
+@using final_para.Ecuaciones
 @{
     ViewData["Title"] = "Inicio";
+    var ecuacion = ViewBag.Ecuacion as Ecuacion;
+    var variables = ecuacion?.VariablesIndependientes?.ToArray()
+                    ?? Model.VariablesIndependientes.ToArray();
+    var ordenes = ecuacion?.OrdenesPorVariable
+                  ?? new Dictionary<string, byte>();
+    var ordenT = ordenes.TryGetValue("t", out var ot) ? ot : (byte)0;
+    var variablesEspaciales = variables.Where(v => v != "t").ToArray();
+
+    string ArgEjeFijo(string ejeFijo, string valorFijo) =>
+        string.Join(",", variables.Select(v => v == ejeFijo ? valorFijo : v));
+    string ArgT0() =>
+        string.Join(",", variables.Select(v => v == "t" ? "0" : v));
 }
 
 <div id="app-edp" data-ecuacion-valida="@(Model.EsValida ? "true" : "false")">
@@ -67,29 +80,72 @@
         <div class="card-header"><h5 class="mb-0">Paso 2 · Configuración del problema</h5></div>
         <div class="card-body">
             <form id="form-config">
+                @* === Dominio: Min/Max/N por cada variable independiente === *@
+                <h6 class="text-muted">Dominio</h6>
                 <div class="row g-3">
-                    <div class="col-md-3"><label class="form-label">x mínimo</label>
-                        <input type="number" step="any" name="XMin" value="0" class="form-control" /></div>
-                    <div class="col-md-3"><label class="form-label">x máximo</label>
-                        <input type="number" step="any" name="XMax" value="1" class="form-control" /></div>
-                    <div class="col-md-3"><label class="form-label">t mínimo</label>
-                        <input type="number" step="any" name="TMin" value="0" class="form-control" /></div>
-                    <div class="col-md-3"><label class="form-label">t máximo</label>
-                        <input type="number" step="any" name="TMax" value="1" class="form-control" /></div>
-
-                    <div class="col-md-3"><label class="form-label">Puntos en x (Nx)</label>
-                        <input type="number" name="Nx" value="25" min="3" max="300" class="form-control" /></div>
-                    <div class="col-md-3"><label class="form-label">Puntos en t (Nt)</label>
-                        <input type="number" name="Nt" value="25" min="3" max="300" class="form-control" /></div>
-
-                    <div class="col-md-4"><label class="form-label">Condición inicial u(x,0)</label>
-                        <input type="text" name="CondicionInicial" value="sin(pi*x)" class="form-control" />
-                        <small class="text-muted">Ej: <code>sin(pi*x)</code>, <code>x*(1-x)</code>, <code>0</code></small></div>
-                    <div class="col-md-3"><label class="form-label">C.F. izq. u(xMin, t)</label>
-                        <input type="text" name="CondicionFronteraIzq" value="0" class="form-control" /></div>
-                    <div class="col-md-3"><label class="form-label">C.F. der. u(xMax, t)</label>
-                        <input type="text" name="CondicionFronteraDer" value="0" class="form-control" /></div>
+                    @foreach (var v in variables)
+                    {
+                        var defaultMin = 0;
+                        var defaultMax = 1;
+                        var defaultN = 25;
+                        <div class="col-md-4">
+                            <label class="form-label">@v mínimo</label>
+                            <input type="number" step="any" name="Min[@v]" value="@defaultMin" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">@v máximo</label>
+                            <input type="number" step="any" name="Max[@v]" value="@defaultMax" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Puntos en @v (N[@v])</label>
+                            <input type="number" name="N[@v]" value="@defaultN" min="3" max="300" class="form-control" />
+                        </div>
+                    }
                 </div>
+
+                @* === Condiciones iniciales (una por cada orden temporal < ordenT) === *@
+                @if (ordenT > 0)
+                {
+                    <h6 class="text-muted mt-3">Condiciones iniciales</h6>
+                    <div class="row g-3">
+                        @for (int i = 0; i < ordenT; i++)
+                        {
+                            var prefijo = i == 0 ? "u" : "u_" + new string('t', i);
+                            var arg = ArgT0();
+                            var descriptor = $"{prefijo}({arg})";
+                            var defaultExpr = i == 0 ? "sin(pi*x)" : "0";
+                            <div class="col-md-6">
+                                <label class="form-label">@descriptor</label>
+                                <input type="text" name="CondicionesIniciales[@descriptor]" value="@defaultExpr" class="form-control" />
+                                @if (i == 0)
+                                {
+                                    <small class="text-muted">Ej: <code>sin(pi*x)</code>, <code>x*(1-x)</code>, <code>0</code></small>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+
+                @* === Condiciones de frontera (2 por cada variable espacial) === *@
+                @if (variablesEspaciales.Length > 0)
+                {
+                    <h6 class="text-muted mt-3">Condiciones de frontera</h6>
+                    <div class="row g-3">
+                        @foreach (var v in variablesEspaciales)
+                        {
+                            var descMin = $"u({ArgEjeFijo(v, v + "Min")})";
+                            var descMax = $"u({ArgEjeFijo(v, v + "Max")})";
+                            <div class="col-md-6">
+                                <label class="form-label">@descMin</label>
+                                <input type="text" name="CondicionesFrontera[@descMin]" value="0" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">@descMax</label>
+                                <input type="text" name="CondicionesFrontera[@descMax]" value="0" class="form-control" />
+                            </div>
+                        }
+                    </div>
+                }
 
                 <hr class="my-3" />
                 <div class="row g-3">

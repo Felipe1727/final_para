@@ -60,8 +60,10 @@
         // Habilitar paso 2
         const paso2 = document.getElementById('paso-2');
         if (data.esValida) {
-            btnContinuar.classList.remove('d-none');
-            paso2.classList.remove('d-none');
+            // La configuración dinámica del paso 2 se renderiza en servidor
+            // en base a la ecuación guardada en sesión.
+            window.location.reload();
+            return;
         } else {
             btnContinuar.classList.add('d-none');
             paso2.classList.add('d-none');

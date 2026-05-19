@@ -20,6 +20,11 @@ public class HomeController : Controller
         HttpContext.Session.SetString("inicializada", "1");
         var sessionId = HttpContext.Session.Id;
         var vm = _sesion.ObtenerEcuacionVM(sessionId) ?? new EcuacionParseadaVM();
+
+        // La vista renderiza el paso 2 (configuración) de forma dinámica
+        // en función de la ecuación parseada. Si todavía no hay ecuación
+        // válida en sesión, el paso 2 queda oculto por completo.
+        ViewBag.Ecuacion = _sesion.ObtenerEcuacion(sessionId);
         return View(vm);
     }
 
