@@ -49,11 +49,14 @@ public static class AlgoritmosFEM
     {
         int n = matriz.Length;
         var b = valoresConocidos[0];
-        var x = new double[n];
+        var x = (valoresConocidos.Length > 1 && valoresConocidos[1].Length == n)
+            ? (double[])valoresConocidos[1].Clone()
+            : new double[n];
         var r = new double[n];
         var p = new double[n];
 
-        for (int i = 0; i < n; i++) r[i] = b[i];
+        var Ax = MultiplicarMatrizVector(matriz, x);
+        for (int i = 0; i < n; i++) r[i] = b[i] - Ax[i];
         for (int i = 0; i < n; i++) p[i] = r[i];
 
         double rsAntiguo = ProductoEscalar(r, r);
@@ -61,7 +64,9 @@ public static class AlgoritmosFEM
         for (int iter = 0; iter < MaxIteracionesCG; iter++)
         {
             var Ap = MultiplicarMatrizVector(matriz, p);
-            double alpha = rsAntiguo / ProductoEscalar(p, Ap);
+            double denom = ProductoEscalar(p, Ap);
+            if (Math.Abs(denom) < 1e-14) break;
+            double alpha = rsAntiguo / denom;
 
             for (int i = 0; i < n; i++)
             {
