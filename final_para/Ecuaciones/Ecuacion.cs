@@ -5,15 +5,15 @@ namespace final_para.Ecuaciones;
 
 public class Ecuacion
 {
-    protected Termino[] Terminos { get; set; }
-    protected string[] VariablesDependientes { get; set; }
-    protected string[] VariablesIndependientes { get; set; }
-    protected byte Orden { get; set; }
-    protected string[] CondicionesIniciales { get; set; }
-    protected string[] CondicionesFrontera { get; set; }
-    protected bool Lineal { get; set; }
-    protected Geometria Geometria { get; set; }
-    protected bool DependenciaTiempo { get; set; }
+    public Termino[] Terminos { get; protected set; }
+    public string[] VariablesDependientes { get; protected set; }
+    public string[] VariablesIndependientes { get; protected set; }
+    public byte Orden { get; protected set; }
+    public string[] CondicionesIniciales { get; protected set; }
+    public string[] CondicionesFrontera { get; protected set; }
+    public bool Lineal { get; protected set; }
+    public Geometria Geometria { get; protected set; }
+    public bool DependenciaTiempo { get; protected set; }
 
     public Ecuacion(
         Termino[] terminos,

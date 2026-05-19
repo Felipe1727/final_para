@@ -93,6 +93,7 @@ public class ServicioParser : IParse
         var variablesDependientes = new[] { "u" };
         var variablesIndependientes = ExtraerVariablesIndependientes(terminosTransformados);
         var orden = CalcularOrden(terminosTransformados);
+        var dependeT = variablesIndependientes.Contains("t");
 
         return new Ecuacion(
             terminos: terminosTransformados,
@@ -103,7 +104,7 @@ public class ServicioParser : IParse
             condicionesFrontera: Array.Empty<string>(),
             lineal: true,
             geometria: Geometria.Parabolica,
-            dependenciaTiempo: false
+            dependenciaTiempo: dependeT
         );
     }
 

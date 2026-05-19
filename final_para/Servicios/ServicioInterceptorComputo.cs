@@ -2,7 +2,7 @@ using Castle.DynamicProxy;
 using final_para.Aspectos;
 using final_para.Estado;
 
-namespace NumericalSolver.Servicios.Servicios;
+namespace final_para.Servicios;
 
 public class ServicioInterceptorComputo : IInterceptor
 {
@@ -17,7 +17,6 @@ public class ServicioInterceptorComputo : IInterceptor
     {
         invocation.Proceed();
 
-        // Tras ejecutar resolver(), extraer el estado y disparar el publisher
         if (invocation.Method.Name == "Resolver" && invocation.ReturnValue is EstadoSolucion estado)
             _publisher.Disparar(estado);
     }
