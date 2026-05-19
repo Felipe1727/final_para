@@ -45,10 +45,7 @@ public class FDM : MetodoNumerico, IResolver<EstadoSolucionFDM>
         var actual = Clonar(Malla);
         var anterior = Clonar(Malla);
         double residuo = double.MaxValue;
-
-        // Obtener el nombre del algoritmo (ej: "Forward Euler", "Backward Euler")
-        string nombreAlgoritmo = Algoritmo.Method.Name;
-        string metodoNombre = nombreAlgoritmo;
+        string metodoNombre = $"FDM-{EsquemaTemporal}";
 
         while (NumIteraciones < MaxIteraciones && residuo > Tolerancia)
         {
