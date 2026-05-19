@@ -61,4 +61,23 @@ public class Ecuacion
 
     public IEnumerable<Termino> TerminosForzantes =>
         Terminos.Where(t => !Regex.IsMatch(t.Expresion, @"\bu_[a-z]+\b"));
+
+    // Stub temporal: Unit 1 lo sustituirá por un cálculo per-variable real.
+    // Mientras tanto se asigna el Orden global a cada variable independiente.
+    public virtual IReadOnlyDictionary<string, byte> OrdenesPorVariable =>
+        VariablesIndependientes.ToDictionary(v => v, _ => Orden);
+
+    public IEnumerable<string> VariablesEspaciales =>
+        VariablesIndependientes.Where(v => v != "t");
+
+    public bool EsTemporal(string v) => v == "t";
+
+    public int NumCondicionesInicialesRequeridas()
+    {
+        if (!DependenciaTiempo) return 0;
+        return OrdenesPorVariable.TryGetValue("t", out var ord) ? ord : Orden;
+    }
+
+    public int NumCondicionesFronteraRequeridas() =>
+        VariablesEspaciales.Sum(v => OrdenesPorVariable.TryGetValue(v, out var ord) ? (int)ord : (int)Orden);
 }

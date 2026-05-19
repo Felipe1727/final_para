@@ -37,8 +37,14 @@ public static class ValidadorEcuacion
         if (tieneDerivadaT && !ecuacion.DependenciaTiempo)
             errores.Add("La ecuación contiene derivadas temporales pero DependenciaTiempo es false.");
 
-        if (ecuacion.DependenciaTiempo && ecuacion.CondicionesIniciales.Length == 0)
-            errores.Add("Una ecuación con dependencia temporal requiere al menos una condición inicial.");
+        int ciRequeridas = ecuacion.NumCondicionesInicialesRequeridas();
+        int cfRequeridas = ecuacion.NumCondicionesFronteraRequeridas();
+
+        if (ecuacion.CondicionesIniciales.Length < ciRequeridas)
+            errores.Add($"Se requieren {ciRequeridas} condiciones iniciales (encontradas: {ecuacion.CondicionesIniciales.Length}).");
+
+        if (ecuacion.CondicionesFrontera.Length < cfRequeridas)
+            errores.Add($"Se requieren {cfRequeridas} condiciones de frontera (encontradas: {ecuacion.CondicionesFrontera.Length}).");
 
         if (ecuacion.Lineal)
         {
