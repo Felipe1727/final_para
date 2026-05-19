@@ -20,12 +20,7 @@
 
     // Plantillas de ejemplo
     const plantillas = [
-        { nombre: 'Calor 1D', texto: 'u_t = u_xx' },
-        { nombre: 'Onda 1D', texto: 'u_tt = u_xx' },
-        { nombre: 'Laplace', texto: 'u_xx + u_yy = 0' },
-        { nombre: 'Poisson', texto: 'u_xx + u_yy = f(x,y)' },
-        { nombre: 'Advección', texto: 'u_t + u_x = 0' },
-        { nombre: 'Burgers', texto: 'u_t + u*u_x = u_xx' }
+        { nombre: 'Calor 1D', texto: 'u_t = u_xx' }
     ];
 
     // Cargar plantillas
