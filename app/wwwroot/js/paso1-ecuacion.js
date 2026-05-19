@@ -8,8 +8,40 @@
     const metaBox = document.getElementById('meta-ecuacion');
     const erroresBox = document.getElementById('errores-parseo');
     const btnContinuar = document.getElementById('btn-continuar');
+    const plantillasList = document.getElementById('plantillas-lista');
 
     if (!btnParsear) return;
+
+    function escapar(s) {
+        return String(s).replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m]));
+    }
+
+    // Plantillas de ejemplo
+    const plantillas = [
+        { nombre: 'Calor 1D', texto: 'u_t = u_xx' },
+        { nombre: 'Onda 1D', texto: 'u_tt = u_xx' },
+        { nombre: 'Laplace', texto: 'u_xx + u_yy = 0' },
+        { nombre: 'Poisson', texto: 'u_xx + u_yy = f(x,y)' },
+        { nombre: 'Advección', texto: 'u_t + u_x = 0' },
+        { nombre: 'Burgers', texto: 'u_t + u*u_x = u_xx' }
+    ];
+
+    // Cargar plantillas
+    if (plantillasList) {
+        plantillasList.innerHTML = plantillas
+            .map(p => `<button type="button" class="btn btn-sm btn-outline-primary template-btn" data-texto="${escapar(p.texto)}">${p.nombre}</button>`)
+            .join('');
+
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                inputTexto.value = btn.dataset.texto;
+                inputTexto.focus();
+            });
+        });
+    }
 
     btnParsear.addEventListener('click', async () => {
         const texto = (inputTexto.value || '').trim();
@@ -58,13 +90,10 @@
         }
 
         // Habilitar paso 2
-        const paso2 = document.getElementById('paso-2');
         if (data.esValida) {
             btnContinuar.classList.remove('d-none');
-            paso2.classList.remove('d-none');
         } else {
             btnContinuar.classList.add('d-none');
-            paso2.classList.add('d-none');
         }
     }
 
@@ -73,16 +102,10 @@
         erroresBox.querySelector('ul').innerHTML = `<li>${escapar(msg)}</li>`;
     }
 
-    function escapar(s) {
-        return String(s).replace(/[&<>"']/g, m => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[m]));
-    }
-
     if (btnContinuar) {
         btnContinuar.addEventListener('click', () => {
-            const paso2 = document.getElementById('paso-2');
-            paso2.scrollIntoView({ behavior: 'smooth' });
+            btnContinuar.disabled = true;
+            setTimeout(() => window.location.href = '/Wizard/Configuracion', 100);
         });
     }
 })();
