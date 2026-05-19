@@ -58,12 +58,14 @@ public class ServicioResolucion
         var esquema = ParsearEsquema(config.EsquemaTemporal);
         var algoritmoFDM = ResolverAlgoritmoFDM(config.AlgoritmoFDM);
         var algoritmoFDM2 = AlgoritmoComplementario(algoritmoFDM);
+        var nombreAlg1 = ObtenerNombreAlgoritmo(config.AlgoritmoFDM);
+        var nombreAlg2 = ObtenerNombreAlgoritmo(ObtenerComplementario(config.AlgoritmoFDM));
 
         var fdm = fabrica.CrearFDM(mallaFDM, ecuacion, esquema, ordenEspacial: 2, ordenTemporal: 1,
-            algoritmoFDM, publisherEvolucion: publisherComputo);
+            algoritmoFDM, publisherEvolucion: publisherComputo, nombreAlgoritmo: nombreAlg1);
 
         var fdm2 = fabrica.CrearFDM(mallaFDM2, ecuacion, esquema, ordenEspacial: 2, ordenTemporal: 1,
-            algoritmoFDM2, publisherEvolucion: publisherComputo);
+            algoritmoFDM2, publisherEvolucion: publisherComputo, nombreAlgoritmo: nombreAlg2);
 
         // Ejecutar ambos en paralelo. Cada Resolver() es síncrono y bloqueante, así que Task.Run.
         var tareaFDM = Task.Run(() => fdm.Resolver(), cancellationToken);
@@ -90,7 +92,7 @@ public class ServicioResolucion
         FDM fdm2)
     {
         var mallaFDMResultado = estadoFDM.ValorActual;
-        var mallaFDM2Resultado = estadoFDM2.ValorActual;
+        var mallaFEMResultado = estadoFDM2.ValorActual;
 
         var metricasFDM = new MetricaVM
         {
@@ -102,7 +104,7 @@ public class ServicioResolucion
             TamanoMalla = estadoFDM.TamanoMalla
         };
 
-        var metricasFDM2 = new MetricaVM
+        var metricasFEM = new MetricaVM
         {
             MetodoNombre = estadoFDM2.MetodoNombre,
             TiempoSegundos = estadoFDM2.TiempoSegundos,
@@ -114,23 +116,23 @@ public class ServicioResolucion
 
         var comparacion = new ComparacionVM
         {
-            DiferenciaTiempo = metricasFDM2.TiempoSegundos - metricasFDM.TiempoSegundos,
-            DiferenciaError = metricasFDM2.Error - metricasFDM.Error,
-            GanadorTiempo = metricasFDM.TiempoSegundos <= metricasFDM2.TiempoSegundos
-                ? metricasFDM.MetodoNombre : metricasFDM2.MetodoNombre,
-            GanadorError = metricasFDM.Error <= metricasFDM2.Error
-                ? metricasFDM.MetodoNombre : metricasFDM2.MetodoNombre
+            DiferenciaTiempo = metricasFEM.TiempoSegundos - metricasFDM.TiempoSegundos,
+            DiferenciaError = metricasFEM.Error - metricasFDM.Error,
+            GanadorTiempo = metricasFDM.TiempoSegundos <= metricasFEM.TiempoSegundos
+                ? metricasFDM.MetodoNombre : metricasFEM.MetodoNombre,
+            GanadorError = metricasFDM.Error <= metricasFEM.Error
+                ? metricasFDM.MetodoNombre : metricasFEM.MetodoNombre
         };
 
         return new ResultadoResolucionVM
         {
             Id = Guid.NewGuid().ToString("N"),
             MallaFDM = mallaFDMResultado,
-            MallaFEM = mallaFDM2Resultado,
+            MallaFEM = mallaFEMResultado,
             EjeX = ejeX,
             EjeY = ejeT,
             MetricasFDM = metricasFDM,
-            MetricasFEM = metricasFDM2,
+            MetricasFEM = metricasFEM,
             Comparacion = comparacion
         };
     }
@@ -157,4 +159,18 @@ public class ServicioResolucion
         algoritmo == AlgoritmosFDM.ForwardEuler
             ? AlgoritmosFDM.BackwardEuler
             : AlgoritmosFDM.ForwardEuler;
+
+    private static string ObtenerNombreAlgoritmo(string nombre) => nombre switch
+    {
+        "ForwardEuler" => "Forward Euler",
+        "BackwardEuler" => "Backward Euler",
+        _ => nombre
+    };
+
+    private static string ObtenerComplementario(string nombre) => nombre switch
+    {
+        "ForwardEuler" => "BackwardEuler",
+        "BackwardEuler" => "ForwardEuler",
+        _ => nombre
+    };
 }

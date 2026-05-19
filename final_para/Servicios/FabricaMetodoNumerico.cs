@@ -26,10 +26,11 @@ public class FabricaMetodoNumerico
         byte ordenEspacial,
         byte ordenTemporal,
         AlgoritmoFDM algoritmo,
-        PublisherComputo? publisherEvolucion = null)
+        PublisherComputo? publisherEvolucion = null,
+        string? nombreAlgoritmo = null)
     {
-        var instancia = new FDM(malla, ecuacion, esquema, ordenEspacial, ordenTemporal, algoritmo, publisherEvolucion);
-        var argumentos = new object?[] { malla, ecuacion, esquema, ordenEspacial, ordenTemporal, algoritmo, publisherEvolucion };
+        var instancia = new FDM(malla, ecuacion, esquema, ordenEspacial, ordenTemporal, algoritmo, publisherEvolucion, nombreAlgoritmo);
+        var argumentos = new object?[] { malla, ecuacion, esquema, ordenEspacial, ordenTemporal, algoritmo, publisherEvolucion, nombreAlgoritmo };
         return (FDM)_generador.CreateClassProxyWithTarget(
             typeof(FDM),
             instancia,

@@ -17,6 +17,7 @@ public class FDM : MetodoNumerico, IResolver<EstadoSolucionFDM>
     public byte OrdenEspacial { get; }
     public byte OrdenTemporal { get; }
     public AlgoritmoFDM Algoritmo { get; }
+    public string? NombreAlgoritmo { get; }
 
     private readonly PublisherComputo? _publisherEvolucion;
 
@@ -27,7 +28,8 @@ public class FDM : MetodoNumerico, IResolver<EstadoSolucionFDM>
         byte ordenEspacial,
         byte ordenTemporal,
         AlgoritmoFDM algoritmo,
-        PublisherComputo? publisherEvolucion = null)
+        PublisherComputo? publisherEvolucion = null,
+        string? nombreAlgoritmo = null)
         : base(malla, ecuacion)
     {
         EsquemaTemporal = esquemaTemporal;
@@ -35,6 +37,7 @@ public class FDM : MetodoNumerico, IResolver<EstadoSolucionFDM>
         OrdenTemporal = ordenTemporal;
         Algoritmo = algoritmo;
         _publisherEvolucion = publisherEvolucion;
+        NombreAlgoritmo = nombreAlgoritmo;
     }
 
     public virtual EstadoSolucionFDM Resolver()
@@ -45,7 +48,7 @@ public class FDM : MetodoNumerico, IResolver<EstadoSolucionFDM>
         var actual = Clonar(Malla);
         var anterior = Clonar(Malla);
         double residuo = double.MaxValue;
-        string metodoNombre = $"FDM-{EsquemaTemporal}";
+        string metodoNombre = NombreAlgoritmo ?? $"FDM-{EsquemaTemporal}";
 
         while (NumIteraciones < MaxIteraciones && residuo > Tolerancia)
         {
